@@ -50,8 +50,7 @@ function ChoixUtilisateur() {
   return (
     <div class="losanges accueil-fond">
       <div class="accueil">
-      <img src="./icone.svg" alt="" width={72} height={72} />
-      <h1>Gestion Écurie</h1>
+      <img class="logo-accueil" src="./logo.png" alt="L'Écurie de Vautorte" />
       <p>Qui utilise ce téléphone ?</p>
       {UTILISATEURS.map((u) => (
         <button class="bouton large" onClick={() => ecrireReglage('utilisateur', u)}>

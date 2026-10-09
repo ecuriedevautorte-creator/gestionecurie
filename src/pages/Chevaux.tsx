@@ -72,6 +72,10 @@ export function PageChevaux() {
 
   return (
     <div class="page">
+      <div class="marque">
+        <img src="./logo.png" alt="" />
+        <span>L'Écurie de Vautorte</span>
+      </div>
       <header class="entete-page">
         <h1>Chevaux</h1>
         <input

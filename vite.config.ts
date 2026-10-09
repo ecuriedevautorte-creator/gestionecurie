@@ -9,15 +9,15 @@ export default defineConfig({
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icone.svg'],
+      includeAssets: ['logo.png', 'icone-180.png'],
       manifest: {
-        name: 'Gestion Écurie',
-        short_name: 'Écurie',
+        name: "L'Écurie de Vautorte",
+        short_name: 'Vautorte',
         description: "Suivi des chevaux, des soins et de l'élevage",
         lang: 'fr',
         start_url: './',
         display: 'standalone',
-        background_color: '#f4efe4',
+        background_color: '#e6e3de',
         theme_color: '#1c2b4a',
         icons: [
           { src: 'icone-192.png', sizes: '192x192', type: 'image/png' },
