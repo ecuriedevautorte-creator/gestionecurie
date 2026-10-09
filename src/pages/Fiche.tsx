@@ -4,6 +4,7 @@ import { db, useLive } from '../db';
 import { calculerEcheances, statutDuSoin, statutOrdonnance, type Statut } from '../echeances';
 import { enregistrerCheval, trancherConflit } from '../ecriture';
 import { reduirePhoto } from '../photo';
+import { nomEmplacement } from '../plan';
 import { useState } from 'preact/hooks';
 import { formaterEuros } from '../import/excel';
 import { DUREE_GESTATION_JOURS, estPresent, LIBELLES_SOIN, type Cheval, type Conflit, type EntreeJournal, type Saillie, type Soin, type TypeSoin } from '../model';
@@ -67,6 +68,11 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
             </p>
             <span class={present ? 'pastille verte' : 'pastille grise'}>{present ? 'Présent' : `Sorti le ${formater(c.sortie)}`}</span>
             {c.usage && <span class="pastille bleue"> {c.usage}</span>}
+            {c.paddock && present && (
+              <a class="pastille beige" href="#/plan">
+                📍 {nomEmplacement(c.paddock)}
+              </a>
+            )}
           </div>
           <PhotoFiche cheval={c} utilisateur={utilisateur} />
         </div>

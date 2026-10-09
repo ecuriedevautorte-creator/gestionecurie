@@ -5,6 +5,7 @@ import { UTILISATEURS } from './model';
 import { PageChevaux } from './pages/Chevaux';
 import { PageDocuments, PageDossier } from './pages/Documents';
 import { PageFiche } from './pages/Fiche';
+import { PagePlan } from './pages/Plan';
 import { PageImport } from './pages/Import';
 import { PageModifierCheval, PageNouveauCheval } from './pages/ModifierCheval';
 import { PageReglages } from './pages/Reglages';
@@ -44,6 +45,7 @@ export function App() {
   else if (page === 'cheval' && id && action === 'modifier') contenu = <PageModifierCheval id={id} utilisateur={utilisateur} />;
   else if (page === 'cheval' && id) contenu = <PageFiche id={id} utilisateur={utilisateur} />;
   else if (page === 'soin' && id) contenu = <PageSaisieSoin key={location.hash} id={id} params={params} utilisateur={utilisateur} />;
+  else if (page === 'plan') contenu = <PagePlan utilisateur={utilisateur} />;
   else if (page === 'documents' && id) contenu = <PageDossier id={id} utilisateur={utilisateur} />;
   else if (page === 'documents') contenu = <PageDocuments utilisateur={utilisateur} />;
   else if (page === 'import') contenu = <PageImport utilisateur={utilisateur} />;
@@ -61,6 +63,9 @@ export function App() {
         </a>
         <a href={nouveauSoin} class={`ajouter ${page === 'soin' ? 'actif' : ''}`}>
           <span aria-hidden="true">＋</span>Saisir un soin
+        </a>
+        <a href="#/plan" class={page === 'plan' ? 'actif' : ''}>
+          <span aria-hidden="true">🗺️</span>Plan
         </a>
         <a href="#/documents" class={page === 'documents' ? 'actif' : ''}>
           <span aria-hidden="true">📁</span>Documents

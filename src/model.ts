@@ -59,6 +59,8 @@ export interface Cheval extends Trace {
   intervalles?: Partial<Record<CleEcheance, Intervalle>>;
   /** Photo réduite (JPEG en data URL), partagée avec la fiche. */
   photo?: string | null;
+  /** Emplacement sur le plan (paddock, pré, box) : identifiant de src/plan.ts. */
+  paddock?: string | null;
 }
 
 export type TypeSoin = 'veterinaire' | 'ordonnance' | 'marechal' | 'osteo' | 'dentiste' | 'vaccin' | 'vermifuge';
@@ -137,6 +139,9 @@ export const INTERVALLES_USAGE_PAR_DEFAUT: IntervallesParUsage = {
 export interface Parametres extends Trace {
   intervalles: Record<string, Intervalle>;
   intervallesUsage: IntervallesParUsage;
+  /** Plan de l'écurie (image JPEG en data URL), partagé entre les appareils. */
+  plan?: string | null;
+  paddocksInitialises?: boolean;
 }
 export const ID_PARAMETRES = '00000000-0000-4000-8000-000000000001';
 

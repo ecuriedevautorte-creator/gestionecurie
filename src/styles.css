@@ -1004,3 +1004,136 @@ h3 {
 .tout-telecharger {
   margin: 12px 0;
 }
+
+/* Plan */
+.plan-cadre {
+  overflow: auto;
+  border-radius: 14px;
+  border: 3px solid var(--beige);
+  background: var(--fond-logo);
+}
+
+.plan {
+  position: relative;
+  width: 100%;
+}
+
+.plan-cadre.zoom .plan {
+  width: 220%;
+}
+
+.plan img {
+  display: block;
+  width: 100%;
+}
+
+.repere {
+  position: absolute;
+  transform: translate(-50%, -13px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.repere-nombre {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1c2b4a;
+  color: #f4efe4;
+  border: 2px solid #d9c7a3;
+  font-weight: 700;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+}
+
+.repere-noms {
+  background: rgb(255 253 248 / 0.95);
+  color: #1a2338;
+  border-radius: 8px;
+  padding: 3px 7px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  width: max-content;
+  max-width: 105px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+}
+
+.repere.actif .repere-nombre {
+  background: #a68a66;
+  transform: scale(1.15);
+}
+
+.groupe-paddock {
+  border-radius: 10px;
+  padding: 2px 8px;
+  margin: 0 -8px;
+}
+
+.groupe-paddock.actif {
+  background: var(--accent-clair);
+}
+
+.groupe-paddock h3 {
+  margin: 12px 0 4px;
+  font-size: 1rem;
+}
+
+.groupe-paddock ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne-paddock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bord);
+}
+
+.ligne-paddock a {
+  font-weight: 600;
+  color: inherit;
+}
+
+.choix-paddock {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  background: var(--carte);
+  color: var(--texte);
+  max-width: 55%;
+}
+
+.pastille.beige {
+  background: var(--beige);
+  color: #1a2338;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.barre {
+  gap: 2px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.barre a {
+  flex: 1 1 0;
+  font-size: 0.7rem;
+}

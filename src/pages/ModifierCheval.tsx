@@ -6,6 +6,7 @@ import { USAGES, type Cheval, type Intervalle, type Proprietaire, type Sexe, typ
 import { reduirePhoto } from '../photo';
 import { intervalleDe, useIntervalles } from '../reglages';
 import { EditeurIntervalles } from './EditeurIntervalles';
+import { ChoixEmplacement } from './Plan';
 
 export function PageModifierCheval({ id, utilisateur }: { id: string; utilisateur: string }) {
   const c = useLive(() => db.chevaux.get(id), [id]);
@@ -79,6 +80,7 @@ function Formulaire({ cheval, nouveau, proprietaires, utilisateur }: { cheval: C
   });
   const [nouveauProprio, setNouveauProprio] = useState({ nom: '', adresse: '' });
   const [photo, setPhoto] = useState(cheval.photo ?? null);
+  const [paddock, setPaddock] = useState(cheval.paddock ?? '');
   const [erreur, setErreur] = useState('');
   const [intervalles, setIntervalles] = useState<Record<string, Intervalle>>({ ...(cheval.intervalles ?? {}) } as Record<string, Intervalle>);
   const maj = (k: keyof Champs) => (e: Event) => setF((x) => ({ ...x, [k]: (e.target as HTMLInputElement).value }));
@@ -113,6 +115,7 @@ function Formulaire({ cheval, nouveau, proprietaires, utilisateur }: { cheval: C
         proprietaireId,
         intervalles,
         photo,
+        paddock: paddock || null,
       },
       utilisateur,
     );
@@ -230,6 +233,10 @@ function Formulaire({ cheval, nouveau, proprietaires, utilisateur }: { cheval: C
 
       <fieldset class="carte">
         <legend>Présence</legend>
+        <label class="champ">
+          <span>Emplacement sur le plan</span>
+          <ChoixEmplacement valeur={paddock} onChange={setPaddock} libelle="Emplacement sur le plan" />
+        </label>
         {texte("Date d'entrée", 'entree', 'date')}
         {texte('Date de sortie', 'sortie', 'date', 'Laisser vide tant que le cheval est présent')}
         {texte('Motif de sortie', 'motifSortie')}
