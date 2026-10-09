@@ -32,9 +32,10 @@ export const EMPLACEMENTS: Emplacement[] = [
 
 export const nomEmplacement = (id: string | null | undefined) => EMPLACEMENTS.find((e) => e.id === id)?.nom ?? '';
 
-/** Répartition donnée par PAF le 09/10/2026, appliquée une seule fois (drapeau partagé dans les réglages). */
+/** Répartition donnée par PAF le 09/10/2026 (Quercus et Quillac corrigés vers le paddock 7), appliquée une seule fois. */
 const REPARTITION_INITIALE: Record<string, string[]> = {
-  'paddock-5': ['QUERCUS', 'QUILLAC', 'VELEDA', 'SENGA', 'ORTENSE'],
+  'paddock-7': ['QUERCUS', 'QUILLAC'],
+  'paddock-5': ['VELEDA', 'SENGA', 'ORTENSE'],
   'paddock-6': ['QONTADOR', 'OBBY'],
   'paddock-3': ['ROSEE', 'OLE', 'VALINO'],
   'paddock-2': ['SHONEN', 'CHAVETA'],
@@ -43,7 +44,7 @@ const REPARTITION_INITIALE: Record<string, string[]> = {
 
 export async function appliquerRepartitionInitiale(auteur: string): Promise<number> {
   const p = await db.parametres.get(ID_PARAMETRES);
-  if (p?.paddocksInitialises) return 0;
+  if (p?.paddocksInitialises) return corrigerPaddock7(auteur);
   const chevaux = (await db.chevaux.toArray()).filter((c) => !c.supprimeLe && !c.sortie);
   if (!chevaux.length) return 0;
   let n = 0;
@@ -55,6 +56,20 @@ export async function appliquerRepartitionInitiale(auteur: string): Promise<numb
         n++;
       }
     }
-  await enregistrerParametres({ paddocksInitialises: true }, auteur);
+  await enregistrerParametres({ paddocksInitialises: true, paddocksCorrection7: true }, auteur);
+  return n;
+}
+
+/** Correction de PAF (09/10/2026, 18 h 21) si la première répartition avait déjà été appliquée : Quercus et Quillac au paddock 7. */
+async function corrigerPaddock7(auteur: string): Promise<number> {
+  const p = await db.parametres.get(ID_PARAMETRES);
+  if (p?.paddocksCorrection7) return 0;
+  let n = 0;
+  for (const c of await db.chevaux.toArray())
+    if (!c.supprimeLe && c.paddock === 'paddock-5' && ['QUERCUS', 'QUILLAC'].some((d) => cleNom(c.nom).startsWith(d))) {
+      await enregistrerCheval({ ...c, paddock: 'paddock-7' }, auteur);
+      n++;
+    }
+  await enregistrerParametres({ paddocksCorrection7: true }, auteur);
   return n;
 }

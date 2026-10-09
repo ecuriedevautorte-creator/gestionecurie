@@ -53,7 +53,7 @@ export const enregistrerCheval = (c: Cheval, auteur: string) => ecrire('chevaux'
 export const ecrireDocument = (d: DocumentCheval, auteur: string, operation?: EntreeJournal['operation']) => ecrire('documents', d, auteur, operation);
 export const enregistrerProprietaire = (p: Proprietaire, auteur: string) => ecrire('proprietaires', p, auteur);
 
-export async function enregistrerParametres(modifs: Partial<Pick<Parametres, 'intervalles' | 'intervallesUsage' | 'plan' | 'paddocksInitialises'>>, auteur: string): Promise<void> {
+export async function enregistrerParametres(modifs: Partial<Pick<Parametres, 'intervalles' | 'intervallesUsage' | 'plan' | 'paddocksInitialises' | 'paddocksCorrection7'>>, auteur: string): Promise<void> {
   const actuel = await db.parametres.get(ID_PARAMETRES);
   const p: Parametres = {
     ...(actuel ?? { id: ID_PARAMETRES, creeLe: '', creePar: '', modifieLe: '', modifiePar: '', intervalles: {}, intervallesUsage: {} }),

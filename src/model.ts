@@ -142,6 +142,7 @@ export interface Parametres extends Trace {
   /** Plan de l'écurie (image JPEG en data URL), partagé entre les appareils. */
   plan?: string | null;
   paddocksInitialises?: boolean;
+  paddocksCorrection7?: boolean;
 }
 export const ID_PARAMETRES = '00000000-0000-4000-8000-000000000001';
 
