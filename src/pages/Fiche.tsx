@@ -23,13 +23,14 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
   const d = useLive(async () => {
     const cheval = await db.chevaux.get(id);
     if (!cheval) return { cheval: null };
+    const nbDocuments = (await db.documents.where('chevalId').equals(id).toArray()).filter((x) => !x.supprimeLe).length;
     const [soins, saillies, tousChevaux, proprietaire] = await Promise.all([
       db.soins.where('chevalId').equals(id).toArray(),
       db.saillies.toArray(),
       db.chevaux.toArray(),
       cheval.proprietaireId ? db.proprietaires.get(cheval.proprietaireId) : undefined,
     ]);
-    return { cheval, soins: soins.filter((s) => !s.supprimeLe), saillies, tousChevaux, proprietaire };
+    return { cheval, soins: soins.filter((s) => !s.supprimeLe), saillies, tousChevaux, proprietaire, nbDocuments };
   }, [id]);
 
   if (!d) return null;
@@ -43,7 +44,7 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
       </div>
     );
   }
-  const { cheval: c, soins, saillies, tousChevaux, proprietaire } = d;
+  const { cheval: c, soins, saillies, tousChevaux, proprietaire, nbDocuments } = d;
   const present = estPresent(c, ref);
   const echeances = calculerEcheances([c], soins, ref);
   const sesSaillies = saillies.filter((s) => s.jumentId === c.id).sort((a, b) => ((a.dateSaillie ?? '') < (b.dateSaillie ?? '') ? 1 : -1));
@@ -78,6 +79,9 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
           </a>
         </div>
         <Export id={c.id} />
+        <a class="lien-documents" href={`#/documents/${c.id}`}>
+          📁 Documents{nbDocuments ? ` (${nbDocuments})` : ''}
+        </a>
       </header>
 
       {aVerifier.length > 0 && (
@@ -320,6 +324,7 @@ function Frise({ soins, cheval, ref_ }: { soins: Soin[]; cheval: Cheval; ref_: s
                         </>
                       )}
                     </p>
+                    {s.details.signature && <img class="signature-soin" src={String(s.details.signature)} alt="Signature du vétérinaire" />}
                     {statut && <PastilleStatut statut={statut} />}
                     {ord && <span class={`pastille ${ord === 'En cours' ? 'orange' : 'grise'}`}>{ord}</span>}
                   </div>

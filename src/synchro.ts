@@ -35,6 +35,8 @@ export interface Serveur {
   envoyer(entrees: object[]): Promise<void>;
   fiches(apres: number, limite: number): Promise<FicheServeur[]>;
   journal(apres: number, jusqua: number, limite: number): Promise<JournalServeur[]>;
+  envoyerFichier(chemin: string, contenu: Blob): Promise<void>;
+  telechargerFichier(chemin: string): Promise<Blob>;
 }
 
 const LOT_ENVOI = 200;
@@ -47,15 +49,16 @@ const tableLocale = (t: TableSynchro) => db.table<Trace, string>(t);
 
 /** Efface les fiches de l'appareil (pas les réglages propres à l'appareil). */
 async function viderLocal(): Promise<void> {
-  await db.transaction('rw', [...TABLES_SYNCHRO.map(tableLocale), db.journal, db.anomalies], async () => {
-    await Promise.all([...TABLES_SYNCHRO.map((t) => tableLocale(t).clear()), db.journal.clear(), db.anomalies.clear()]);
+  await db.transaction('rw', [...TABLES_SYNCHRO.map(tableLocale), db.journal, db.anomalies, db.fichiers], async () => {
+    await Promise.all([...TABLES_SYNCHRO.map((t) => tableLocale(t).clear()), db.journal.clear(), db.anomalies.clear(), db.fichiers.clear()]);
   });
 }
 
 /** Prépare l'envoi de toutes les fiches de l'appareil, comme si elles venaient d'être créées. */
 async function preparerEnvoiComplet(): Promise<void> {
-  await db.transaction('rw', [...TABLES_SYNCHRO.map(tableLocale), db.journal], async () => {
+  await db.transaction('rw', [...TABLES_SYNCHRO.map(tableLocale), db.journal, db.fichiers], async () => {
     await db.journal.clear();
+    await db.fichiers.toCollection().modify({ envoye: 0 });
     for (const table of TABLES_SYNCHRO) {
       const fiches = await tableLocale(table).toArray();
       await db.journal.bulkAdd(
@@ -78,10 +81,13 @@ export interface BilanSynchro {
   envoyees: number;
   recues: number;
   reinitialise: boolean;
+  fichiersEnvoyes: number;
+  /** Fichiers qui n'ont pas pu partir (ils seront retentés au prochain passage). */
+  fichiersEnEchec: number;
 }
 
 export async function synchroniser(serveur: Serveur): Promise<BilanSynchro> {
-  const bilan: BilanSynchro = { envoyees: 0, recues: 0, reinitialise: false };
+  const bilan: BilanSynchro = { envoyees: 0, recues: 0, reinitialise: false, fichiersEnvoyes: 0, fichiersEnEchec: 0 };
 
   // 0. Après un import Excel sur cet appareil : on remplace la base partagée.
   if (await lire('synchro.remplacer', false)) {
@@ -107,7 +113,19 @@ export async function synchroniser(serveur: Serveur): Promise<BilanSynchro> {
     await ecrireR('synchro.curseur', 0);
   }
 
-  // 2. Envoi.
+  // 2. Envoi des documents ajoutés sur cet appareil (avant leur fiche, pour qu'ils soient là quand l'autre appareil la reçoit).
+  for (const f of await db.fichiers.where('envoye').equals(0).toArray()) {
+    try {
+      await serveur.envoyerFichier(f.chemin, f.blob);
+      await db.fichiers.update(f.chemin, { envoye: 1 });
+      bilan.fichiersEnvoyes++;
+    } catch (e) {
+      console.error('Envoi du document impossible', f.chemin, e);
+      bilan.fichiersEnEchec++;
+    }
+  }
+
+  // 3. Envoi des saisies.
   for (;;) {
     const lot = (await db.journal.where('envoye').equals(0).sortBy('le')).slice(0, LOT_ENVOI);
     if (!lot.length) break;
@@ -116,7 +134,7 @@ export async function synchroniser(serveur: Serveur): Promise<BilanSynchro> {
     bilan.envoyees += lot.length;
   }
 
-  // 3. Réception des fiches modifiées.
+  // 4. Réception des fiches modifiées.
   const depart = await lire('synchro.curseur', 0);
   let curseur = depart;
   for (;;) {
@@ -137,7 +155,7 @@ export async function synchroniser(serveur: Serveur): Promise<BilanSynchro> {
     if (lot.length < LOT_RECEPTION) break;
   }
 
-  // 4. Historique des modifications faites sur les autres appareils (affiché sous chaque soin).
+  // 5. Historique des modifications faites sur les autres appareils (affiché sous chaque soin).
   for (let c = depart; c < curseur; ) {
     const lot = await serveur.journal(c, curseur, LOT_RECEPTION);
     if (!lot.length) break;

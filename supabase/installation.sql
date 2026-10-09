@@ -10,7 +10,7 @@
 create sequence if not exists public.revision_seq;
 
 create table if not exists public.fiches (
-  table_nom text not null check (table_nom in ('chevaux', 'soins', 'saillies', 'proprietaires', 'parametres')),
+  table_nom text not null check (table_nom in ('chevaux', 'soins', 'saillies', 'proprietaires', 'parametres', 'documents')),
   id uuid not null,
   donnees jsonb not null default '{}'::jsonb,
   horodatage jsonb not null default '{}'::jsonb,
@@ -39,7 +39,7 @@ create index if not exists journal_fiche on public.journal (fiche_id);
 alter table public.journal add column if not exists revision bigint;
 alter table public.fiches drop constraint if exists fiches_table_nom_check;
 alter table public.fiches add constraint fiches_table_nom_check
-  check (table_nom in ('chevaux', 'soins', 'saillies', 'proprietaires', 'parametres'));
+  check (table_nom in ('chevaux', 'soins', 'saillies', 'proprietaires', 'parametres', 'documents'));
 create index if not exists journal_revision on public.journal (revision);
 
 -- « generation » change quand on réimporte tout le classeur : les téléphones repartent de zéro.
@@ -166,3 +166,17 @@ grant select, insert, update, delete on public.fiches, public.journal, public.et
 grant usage, select on sequence public.revision_seq to authenticated;
 grant execute on function public.appliquer_journal(jsonb) to authenticated;
 grant execute on function public.tout_effacer() to authenticated;
+
+-- Documents (ordonnances, factures…) : fichiers rangés par cheval dans un espace privé.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('documents', 'documents', false, 52428800)
+on conflict (id) do nothing;
+
+drop policy if exists "gerants documents lecture" on storage.objects;
+drop policy if exists "gerants documents ajout" on storage.objects;
+drop policy if exists "gerants documents modification" on storage.objects;
+drop policy if exists "gerants documents suppression" on storage.objects;
+create policy "gerants documents lecture" on storage.objects for select to authenticated using (bucket_id = 'documents');
+create policy "gerants documents ajout" on storage.objects for insert to authenticated with check (bucket_id = 'documents');
+create policy "gerants documents modification" on storage.objects for update to authenticated using (bucket_id = 'documents');
+create policy "gerants documents suppression" on storage.objects for delete to authenticated using (bucket_id = 'documents');

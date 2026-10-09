@@ -9,6 +9,7 @@ import { changerDeBase, db } from '../src/db';
 import { enregistrerCheval, enregistrerSoin, trancherConflit } from '../src/ecriture';
 import type { Cheval, Soin } from '../src/model';
 import { demanderRemplacementServeur, synchroniser, type Serveur } from '../src/synchro';
+import { ajouterDocument, supprimerDocument } from '../src/documents';
 
 const ADRESSE = process.env.PG_ESSAI;
 const BASE = `essai_synchro_${process.pid}`;
@@ -16,7 +17,16 @@ const BASE = `essai_synchro_${process.pid}`;
 let admin: pg.Client;
 let client: pg.Client;
 
+const stockage = new Map<string, Blob>();
 const serveur: Serveur = {
+  async envoyerFichier(chemin, contenu) {
+    stockage.set(chemin, contenu);
+  },
+  async telechargerFichier(chemin) {
+    const b = stockage.get(chemin);
+    if (!b) throw new Error('introuvable');
+    return b;
+  },
   async generation() {
     return (await client.query(`select valeur from etat where cle = 'generation'`)).rows[0].valeur;
   },
@@ -76,7 +86,11 @@ describe.skipIf(!ADRESSE)('synchronisation entre deux appareils', () => {
     await client.query(`do $$ begin create role anon; exception when duplicate_object then null; end $$;
       do $$ begin create role authenticated; exception when duplicate_object then null; end $$;
       create schema auth; create function auth.uid() returns uuid language sql as 'select null::uuid';
-      grant usage on schema auth to authenticated, anon;`);
+      grant usage on schema auth to authenticated, anon;
+      create schema storage;
+      create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint);
+      create table storage.objects (bucket_id text, name text);
+      alter table storage.objects enable row level security;`);
     await client.query(readFileSync('supabase/installation.sql', 'utf8'));
     await client.query('set role authenticated');
   });
@@ -177,6 +191,28 @@ describe.skipIf(!ADRESSE)('synchronisation entre deux appareils', () => {
       const v = (await db.chevaux.get(VELEDA))!;
       expect([v.robe, v.conflits]).toEqual(['Alezan', []]);
     }
+  });
+
+  it("un document ajouté sur un appareil arrive dans le dossier du cheval sur l'autre", async () => {
+    sur(PA);
+    tic();
+    const doc = await ajouterDocument(QUERCUS, new File(['%PDF-1.4 facture'], 'Facture_Quercus 11032026.PDF', { type: 'application/pdf' }), 'Pierre-Alexandre');
+    const bilan = await synchroniser(serveur);
+    expect([bilan.fichiersEnvoyes, bilan.fichiersEnEchec]).toEqual([1, 0]);
+    expect(stockage.has(`${QUERCUS}/${doc.id}`)).toBe(true);
+
+    sur(CHLOE);
+    await synchroniser(serveur);
+    const recu = (await db.documents.where('chevalId').equals(QUERCUS).toArray())[0];
+    expect([recu.nom, recu.creePar, recu.taille]).toEqual(['Facture_Quercus 11032026.PDF', 'Pierre-Alexandre', 16]);
+    expect(await (await serveur.telechargerFichier(recu.chemin)).text()).toBe('%PDF-1.4 facture');
+
+    tic();
+    await supprimerDocument(recu, 'Chloé');
+    await synchroniser(serveur);
+    sur(PA);
+    await synchroniser(serveur);
+    expect((await db.documents.get(doc.id))!.supprimeLe).toBeTruthy();
   });
 
   it("un réimport Excel sur un appareil remplace les données de l'autre", async () => {

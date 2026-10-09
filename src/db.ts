@@ -1,6 +1,6 @@
 import Dexie, { liveQuery, type Table } from 'dexie';
 import { useEffect, useState } from 'preact/hooks';
-import type { Anomalie, Cheval, EntreeJournal, Parametres, Proprietaire, Saillie, Soin } from './model';
+import type { Anomalie, Cheval, DocumentCheval, EntreeJournal, FichierLocal, Parametres, Proprietaire, Saillie, Soin } from './model';
 import type { ResultatImport } from './import/excel';
 
 /** Base locale du téléphone : l'application lit et écrit toujours ici d'abord, d'où le fonctionnement hors réseau. */
@@ -13,6 +13,8 @@ export class EcurieDB extends Dexie {
   reglages!: Table<{ cle: string; valeur: unknown }, string>;
   journal!: Table<EntreeJournal, string>;
   parametres!: Table<Parametres, string>;
+  documents!: Table<DocumentCheval, string>;
+  fichiers!: Table<FichierLocal, string>;
 
   constructor(nom = 'gestion-ecurie') {
     super(nom);
@@ -28,6 +30,8 @@ export class EcurieDB extends Dexie {
     this.version(2).stores({ journal: 'id, table, ficheId, le, envoye' });
     // v3 : réglages partagés entre les deux gérants (intervalles généraux et par catégorie)
     this.version(3).stores({ parametres: 'id' });
+    // v4 : documents par cheval (fiche partagée) et leur contenu gardé sur l'appareil
+    this.version(4).stores({ documents: 'id, chevalId', fichiers: 'chemin, envoye' });
   }
 }
 
@@ -51,7 +55,15 @@ export function useLive<T>(requete: () => Promise<T>, deps: unknown[] = []): T |
 
 /** Remplace toutes les données par celles d'un import Excel. */
 export async function enregistrerImport(r: ResultatImport): Promise<void> {
-  await db.transaction('rw', [db.chevaux, db.soins, db.saillies, db.proprietaires, db.anomalies, db.journal], async () => {
+  await db.transaction('rw', [db.chevaux, db.soins, db.saillies, db.proprietaires, db.anomalies, db.journal, db.documents], async () => {
+    // les documents sont gardés : on les rattache aux chevaux du nouvel import par leur nom
+    const cle = (n: string) => n.normalize('NFD').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const ancienNom = new Map((await db.chevaux.toArray()).map((c) => [c.id, cle(c.nom)]));
+    const nouvelId = new Map(r.chevaux.map((c) => [cle(c.nom), c.id]));
+    for (const d of await db.documents.toArray()) {
+      const id = nouvelId.get(ancienNom.get(d.chevalId) ?? '');
+      if (id && id !== d.chevalId) await db.documents.update(d.id, { chevalId: id });
+    }
     await Promise.all([db.chevaux.clear(), db.soins.clear(), db.saillies.clear(), db.proprietaires.clear(), db.anomalies.clear(), db.journal.clear()]);
     await db.proprietaires.bulkAdd(r.proprietaires);
     await db.chevaux.bulkAdd(r.chevaux);

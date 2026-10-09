@@ -2,7 +2,7 @@
 // et une ligne de journal garde qui a fait quoi, quand, et les anciennes valeurs.
 
 import { db } from './db';
-import { ID_PARAMETRES, type Cheval, type EntreeJournal, type Parametres, type Proprietaire, type Soin, type Trace } from './model';
+import { ID_PARAMETRES, type Cheval, type DocumentCheval, type EntreeJournal, type Parametres, type Proprietaire, type Soin, type Trace } from './model';
 
 type Table = EntreeJournal['table'];
 // modifieLe / modifiePar sont recalculés par le serveur ; creeLe / creePar ne partent qu'à la création.
@@ -50,6 +50,7 @@ async function ecrire<T extends Trace>(table: Table, fiche: T, auteur: string, o
 
 export const enregistrerSoin = (s: Soin, auteur: string) => ecrire('soins', s, auteur);
 export const enregistrerCheval = (c: Cheval, auteur: string) => ecrire('chevaux', c, auteur);
+export const ecrireDocument = (d: DocumentCheval, auteur: string, operation?: EntreeJournal['operation']) => ecrire('documents', d, auteur, operation);
 export const enregistrerProprietaire = (p: Proprietaire, auteur: string) => ecrire('proprietaires', p, auteur);
 
 export async function enregistrerParametres(modifs: Partial<Pick<Parametres, 'intervalles' | 'intervallesUsage'>>, auteur: string): Promise<void> {

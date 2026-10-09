@@ -6,6 +6,7 @@ import { enregistrerSoin, nouvelId, supprimerSoin } from '../ecriture';
 import { cleNom } from '../import/excel';
 import { estPresent, LIBELLES_SOIN, type Cheval, type Intervalle, type Soin, type TypeSoin } from '../model';
 import { intervallePropose, useIntervalles } from '../reglages';
+import { PadSignature } from './Signature';
 
 const TYPES: TypeSoin[] = ['marechal', 'veterinaire', 'vaccin', 'vermifuge', 'ordonnance', 'osteo', 'dentiste'];
 const TYPES_MARECHAL = ['Parage', 'Ferrure', 'Ferrure + Parage'];
@@ -30,6 +31,8 @@ interface Formulaire {
   traitement: string;
   posologie: string;
   dureeJours: string;
+  /** Signature du vétérinaire (image PNG), '' si non signé. */
+  signature: string;
 }
 
 export function PageSaisieSoin({ id, params, utilisateur }: { id: string; params: URLSearchParams; utilisateur: string }) {
@@ -66,6 +69,7 @@ function etatInitial(existant: Soin | undefined, modele: Soin | undefined, param
     traitement: String(existant?.details.traitement ?? ''),
     posologie: String(base?.details.posologie ?? ''),
     dureeJours: base?.details.dureeJours != null ? String(base.details.dureeJours) : '',
+    signature: String(existant?.details.signature ?? ''),
   };
 }
 
@@ -110,7 +114,7 @@ function Formulaire(props: {
     const cout = f.cout.trim() ? Number(f.cout.replace(/\s/g, '').replace(',', '.')) : null;
     if (cout !== null && !Number.isFinite(cout)) return setErreur('Le coût doit être un nombre, par exemple 42,50.');
     const details: Soin['details'] = {};
-    if (f.type === 'veterinaire') Object.assign(details, { diagnostic: f.diagnostic || null, traitement: f.traitement || null });
+    if (f.type === 'veterinaire') Object.assign(details, { diagnostic: f.diagnostic || null, traitement: f.traitement || null, signature: f.signature || null });
     if (f.type === 'ordonnance') Object.assign(details, { posologie: f.posologie || null, dureeJours: f.dureeJours ? Number(f.dureeJours) : null });
     const avecIntervalle = !['veterinaire', 'ordonnance'].includes(f.type);
     for (const chevalId of f.chevaux) {
@@ -255,6 +259,13 @@ function Formulaire(props: {
         {f.type === 'veterinaire' && champ('Lien de la facture (Drive)', f.lienFacture, 'lienFacture', { type: 'url', placeholder: 'https://drive.google.com/…' })}
       </fieldset>
 
+      {f.type === 'veterinaire' && (
+        <fieldset class="carte">
+          <legend>Signature du vétérinaire</legend>
+          <PadSignature valeur={f.signature} onChange={(signature) => maj({ signature })} />
+        </fieldset>
+      )}
+
       <fieldset class="carte">
         <legend>Prochaine échéance</legend>
         {f.type === 'veterinaire' ? (
@@ -378,7 +389,14 @@ function valeurLisible(v: unknown): string {
   if (typeof v === 'number') return String(v).replace('.', ',');
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return formater(v);
   if (typeof v === 'object' && v && 'valeur' in v) return `${(v as Intervalle).valeur} ${(v as Intervalle).unite}`;
-  if (typeof v === 'object') return Object.entries(v as object).filter(([, x]) => x !== null && x !== '').map(([k, x]) => `${k} : ${x}`).join(', ') || '—';
+  if (typeof v === 'object')
+    return (
+      Object.entries(v as object)
+        .filter(([, x]) => x !== null && x !== '')
+        .map(([k, x]) => `${k} : ${valeurLisible(x)}`)
+        .join(', ') || '—'
+    );
+  if (typeof v === 'string' && v.startsWith('data:image')) return 'signature';
   return String(v);
 }
 

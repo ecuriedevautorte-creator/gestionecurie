@@ -43,8 +43,12 @@ export async function synchroniserMaintenant(): Promise<void> {
   if (!navigator.onLine) return publier({ erreur: 'hors-ligne' });
   publier({ enCours: true });
   try {
-    await synchroniser(serveurSupabase);
-    publier({ enCours: false, erreur: null, derniere: new Date().toISOString() });
+    const bilan = await synchroniser(serveurSupabase);
+    publier({
+      enCours: false,
+      erreur: bilan.fichiersEnEchec ? `${bilan.fichiersEnEchec} document(s) pas encore envoyé(s) dans la base partagée` : null,
+      derniere: new Date().toISOString(),
+    });
   } catch (e) {
     const message = String((e as Error).message ?? e);
     publier({ enCours: false, erreur: !navigator.onLine || /fetch|network/i.test(message) ? 'hors-ligne' : message });

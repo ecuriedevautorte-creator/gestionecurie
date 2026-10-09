@@ -58,6 +58,7 @@ function ligneIntervention(s: Soin, nom: string): string[] {
   }
   const debut = s.type === 'ordonnance' ? formater(s.date) : '';
   return [formater(s.date), nom, type, s.praticien, medicament, dose, debut, fin, '', '', ''].map(net);
+  // (la signature éventuelle est dessinée dans la cellule « Intervenant », sous le nom)
 }
 
 export async function exporterRegistre(): Promise<void> {
@@ -109,6 +110,7 @@ export async function exporterRegistre(): Promise<void> {
   };
   const tableau = {
     theme: 'grid' as const,
+    rowPageBreak: 'avoid' as const,
     margin: { left: marge, right: marge, top: 30 },
     styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.6, lineColor: [60, 60, 60] as [number, number, number], lineWidth: 0.2, textColor: 30, valign: 'middle' as const },
     headStyles: { fillColor: ENTETE, textColor: TITRE, fontStyle: 'bold' as const, halign: 'center' as const },
@@ -229,6 +231,21 @@ export async function exporterRegistre(): Promise<void> {
       ['Nom du médicament', 'Voie administration, dose (facultatif si ordonnance à conserver 5 ans)', 'Date de début', 'Date de fin'],
     ],
     body: tousSoins.map((s) => ligneIntervention(s, parId.get(s.chevalId)?.nom ?? '?')),
+    // signature tactile du vétérinaire dans la colonne « Intervenant (cachet, signature) »
+    didParseCell: (c) => {
+      const sig = c.section === 'body' && c.column.index === 3 ? tousSoins[c.row.index]?.details.signature : null;
+      if (sig) {
+        c.cell.styles.minCellHeight = 15;
+        c.cell.styles.valign = 'top';
+      }
+    },
+    didDrawCell: (c) => {
+      const sig = c.section === 'body' && c.column.index === 3 ? tousSoins[c.row.index]?.details.signature : null;
+      if (!sig) return;
+      const h = 8;
+      const w = Math.min(c.cell.width - 2, (h * 600) / 220);
+      doc.addImage(String(sig), 'PNG', c.cell.x + 1, c.cell.y + c.cell.height - h - 1, w, h);
+    },
     styles: { ...tableau.styles, fontSize: 7.5 },
     headStyles: { ...tableau.headStyles, fontSize: 7 },
     columnStyles: {

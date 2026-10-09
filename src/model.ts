@@ -140,6 +140,23 @@ export interface Parametres extends Trace {
 }
 export const ID_PARAMETRES = '00000000-0000-4000-8000-000000000001';
 
+/** Pièce jointe rangée dans le dossier d'un cheval (ordonnance, facture, rapport…). */
+export interface DocumentCheval extends Trace {
+  chevalId: string;
+  nom: string;
+  typeMime: string;
+  taille: number;
+  /** Emplacement du fichier dans la base partagée : « idCheval/idDocument ». */
+  chemin: string;
+}
+
+/** Contenu d'un document gardé sur l'appareil ; envoye = 0 tant qu'il n'est pas dans la base partagée. */
+export interface FichierLocal {
+  chemin: string;
+  blob: Blob;
+  envoye: 0 | 1;
+}
+
 export interface Anomalie {
   id: string;
   gravite: 'a-trancher' | 'corrige' | 'info';
@@ -154,7 +171,7 @@ export function estPresent(c: Cheval, ref: ISODate): boolean {
   return !c.sortie || c.sortie > ref;
 }
 
-export const TABLES_SYNCHRO = ['chevaux', 'soins', 'saillies', 'proprietaires', 'parametres'] as const;
+export const TABLES_SYNCHRO = ['chevaux', 'soins', 'saillies', 'proprietaires', 'parametres', 'documents'] as const;
 export type TableSynchro = (typeof TABLES_SYNCHRO)[number];
 
 /** Une ligne par création, modification ou suppression : qui, quand, et les valeurs avant / après. */

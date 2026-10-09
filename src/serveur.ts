@@ -44,6 +44,17 @@ export const serveurSupabase: Serveur = {
       await s.from('fiches').select('table_nom, id, donnees, revision').gt('revision', apres).order('revision').limit(limite),
     ) as FicheServeur[];
   },
+  async envoyerFichier(chemin, contenu) {
+    const s = await supabase();
+    const { error } = await s.storage.from('documents').upload(chemin, contenu, { upsert: true, contentType: contenu.type || 'application/octet-stream' });
+    if (error) throw new Error(error.message);
+  },
+  async telechargerFichier(chemin) {
+    const s = await supabase();
+    const { data, error } = await s.storage.from('documents').download(chemin);
+    if (error || !data) throw new Error(error?.message ?? 'Document introuvable');
+    return data;
+  },
   async journal(apres, jusqua, limite) {
     const s = await supabase();
     return verifier(

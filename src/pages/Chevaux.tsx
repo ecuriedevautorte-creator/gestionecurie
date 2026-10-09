@@ -101,12 +101,9 @@ export function PageChevaux() {
           ))}
         </div>
       </header>
-      <div class="compte-ligne">
-        <p class="discret compte">
-          {liste.length} cheva{liste.length > 1 ? 'ux' : 'l'}
-        </p>
-        <BoutonRegistre />
-      </div>
+      <p class="discret compte">
+        {liste.length} cheva{liste.length > 1 ? 'ux' : 'l'}
+      </p>
       <ul class="liste">
         {liste.map((c) => (
           <LigneCheval cheval={c} proprio={c.proprietaireId ? nomProprio.get(c.proprietaireId) : undefined} alerte={alertes.get(c.id)} ref_={ref} />
@@ -144,24 +141,3 @@ function LigneCheval(props: { cheval: Cheval; proprio?: string; alerte?: { retar
   );
 }
 
-function BoutonRegistre() {
-  const [enCours, setEnCours] = useState(false);
-  return (
-    <button
-      class="bouton secondaire petit-bouton"
-      disabled={enCours}
-      onClick={async () => {
-        setEnCours(true);
-        try {
-          await (await import('../export/registre')).exporterRegistre();
-        } catch (e) {
-          console.error(e);
-          alert("Le registre n'a pas pu être préparé.");
-        }
-        setEnCours(false);
-      }}
-    >
-      {enCours ? 'Préparation…' : "📄 Registre d'élevage (PDF)"}
-    </button>
-  );
-}
