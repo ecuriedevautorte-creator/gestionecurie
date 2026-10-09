@@ -529,3 +529,175 @@ h3 {
 .barre {
   border-top: 3px solid var(--beige);
 }
+
+/* Étape 2 : saisie */
+.actions-fiche {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.actions-fiche .bouton {
+  flex: 1;
+  text-align: center;
+}
+
+.bouton.secondaire {
+  flex: 0 0 auto;
+  background: var(--carte);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.bouton-texte {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bouton-texte.danger {
+  color: var(--rouge);
+}
+
+.fait {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-top: 2px;
+}
+
+.soin {
+  cursor: pointer;
+}
+
+.saisie fieldset {
+  min-width: 0;
+}
+
+.saisie legend {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.puces.enveloppe {
+  flex-wrap: wrap;
+  overflow: visible;
+  margin-top: 4px;
+}
+
+.puce:disabled {
+  opacity: 0.4;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+}
+
+.champ > span {
+  font-size: 0.9rem;
+  color: var(--discret);
+}
+
+.champ input,
+.champ select,
+.champ textarea,
+.selection,
+.intervalle input,
+.intervalle select {
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--bord);
+  border-radius: 10px;
+  background: var(--fond);
+  color: var(--texte);
+  width: 100%;
+  min-height: 44px;
+}
+
+.intervalle {
+  display: flex;
+  gap: 8px;
+}
+
+.intervalle input {
+  flex: 0 0 90px;
+  width: 90px;
+}
+
+.interrupteur {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.interrupteur input,
+.choix-multiple input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+
+.choix-tete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recherche.petite {
+  padding: 8px 12px;
+  margin: 4px 0 8px;
+}
+
+.choix-multiple ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.choix-multiple label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--bord);
+}
+
+.prochaine {
+  background: var(--accent-clair);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0 0;
+}
+
+.trace {
+  margin-top: 14px;
+}
+
+.historique summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.historique ul {
+  padding-left: 18px;
+}
+
+.barre a.ajouter span {
+  font-weight: 700;
+}

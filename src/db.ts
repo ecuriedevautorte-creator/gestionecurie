@@ -1,6 +1,6 @@
 import Dexie, { liveQuery, type Table } from 'dexie';
 import { useEffect, useState } from 'preact/hooks';
-import type { Anomalie, Cheval, Proprietaire, Saillie, Soin } from './model';
+import type { Anomalie, Cheval, EntreeJournal, Proprietaire, Saillie, Soin } from './model';
 import type { ResultatImport } from './import/excel';
 
 /** Base locale du téléphone : l'application lit et écrit toujours ici d'abord, d'où le fonctionnement hors réseau. */
@@ -11,6 +11,7 @@ export class EcurieDB extends Dexie {
   proprietaires!: Table<Proprietaire, string>;
   anomalies!: Table<Anomalie, string>;
   reglages!: Table<{ cle: string; valeur: unknown }, string>;
+  journal!: Table<EntreeJournal, string>;
 
   constructor() {
     super('gestion-ecurie');
@@ -22,6 +23,8 @@ export class EcurieDB extends Dexie {
       anomalies: 'id',
       reglages: 'cle',
     });
+    // v2 : journal de toutes les saisies (traçabilité, puis envoi au serveur à l'étape 3)
+    this.version(2).stores({ journal: 'id, table, ficheId, le, envoye' });
   }
 }
 
@@ -39,8 +42,8 @@ export function useLive<T>(requete: () => Promise<T>, deps: unknown[] = []): T |
 
 /** Remplace toutes les données par celles d'un import Excel. */
 export async function enregistrerImport(r: ResultatImport): Promise<void> {
-  await db.transaction('rw', [db.chevaux, db.soins, db.saillies, db.proprietaires, db.anomalies], async () => {
-    await Promise.all([db.chevaux.clear(), db.soins.clear(), db.saillies.clear(), db.proprietaires.clear(), db.anomalies.clear()]);
+  await db.transaction('rw', [db.chevaux, db.soins, db.saillies, db.proprietaires, db.anomalies, db.journal], async () => {
+    await Promise.all([db.chevaux.clear(), db.soins.clear(), db.saillies.clear(), db.proprietaires.clear(), db.anomalies.clear(), db.journal.clear()]);
     await db.proprietaires.bulkAdd(r.proprietaires);
     await db.chevaux.bulkAdd(r.chevaux);
     await db.soins.bulkAdd(r.soins);

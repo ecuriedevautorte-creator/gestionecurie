@@ -60,6 +60,15 @@ export function PageFiche({ id }: { id: string }) {
           {c.naissance && ` · ${c.naissanceAnneeSeule ? `né${c.sexe === 'Femelle' ? 'e' : ''} en ${annee(c.naissance)}` : ageLisible(c.naissance, ref)}`}
         </p>
         <span class={present ? 'pastille verte' : 'pastille grise'}>{present ? 'Présent' : `Sorti le ${formater(c.sortie)}`}</span>
+        {c.usage && <span class="pastille bleue"> {c.usage}</span>}
+        <div class="actions-fiche">
+          <a class="bouton" href={`#/soin/nouveau?cheval=${c.id}`}>
+            + Ajouter un soin
+          </a>
+          <a class="bouton secondaire" href={`#/cheval/${c.id}/modifier`}>
+            Modifier
+          </a>
+        </div>
       </header>
 
       {aVerifier.length > 0 && (
@@ -89,6 +98,9 @@ export function PageFiche({ id }: { id: string }) {
                 <span class="echeance-date">
                   {formater(e.prochaine)}
                   <PastilleStatut statut={e.statut} jours={e.joursRestants} />
+                  <a class="fait" href={`#/soin/nouveau?depuis=${e.soin.id}`}>
+                    ✓ Fait
+                  </a>
                 </span>
               </li>
             ))}
@@ -264,7 +276,7 @@ function Frise({ soins, cheval, ref_ }: { soins: Soin[]; cheval: Cheval; ref_: s
               const ord = s.type === 'ordonnance' ? statutOrdonnance(s, ref_) : null;
               const lignes = [...new Set([s.motif, s.details.diagnostic, s.details.traitement, s.details.posologie].filter(Boolean).map(String))];
               return (
-                <li class={`soin soin-${s.type}`}>
+                <li class={`soin soin-${s.type}`} onClick={(ev) => (ev.target as HTMLElement).tagName !== 'A' && (location.hash = `#/soin/${s.id}`)}>
                   <span class="soin-icone" aria-hidden="true">
                     {ICONES[s.type]}
                   </span>

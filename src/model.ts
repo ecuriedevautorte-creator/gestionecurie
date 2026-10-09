@@ -129,3 +129,21 @@ export interface Anomalie {
 export function estPresent(c: Cheval, ref: ISODate): boolean {
   return !c.sortie || c.sortie > ref;
 }
+
+/** Une ligne par création, modification ou suppression : qui, quand, et les valeurs avant / après. */
+export interface EntreeJournal {
+  id: string;
+  table: 'chevaux' | 'soins' | 'saillies' | 'proprietaires';
+  ficheId: string;
+  operation: 'creation' | 'modification' | 'suppression' | 'restauration';
+  le: string;
+  par: string;
+  /** Champs modifiés : valeur avant et après. */
+  changements: Record<string, { avant: unknown; apres: unknown }>;
+  /** 0 tant que la saisie n'est pas envoyée au serveur (étape 3). */
+  envoye: 0 | 1;
+}
+
+export const CORBEILLE_JOURS = 30;
+
+export const UTILISATEURS = ['Pierre-Alexandre', 'Chloé'] as const;
