@@ -30,6 +30,7 @@ export function App() {
   const [page, id] = route;
   return (
     <div class="appli">
+      <div class="losanges bandeau-motif" aria-hidden="true" />
       <main>
         {page === 'cheval' && id ? <PageFiche id={id} /> : page === 'import' ? <PageImport utilisateur={utilisateur} /> : <PageChevaux />}
       </main>
@@ -47,7 +48,8 @@ export function App() {
 
 function ChoixUtilisateur() {
   return (
-    <div class="accueil">
+    <div class="losanges accueil-fond">
+      <div class="accueil">
       <img src="./icone.svg" alt="" width={72} height={72} />
       <h1>Gestion Écurie</h1>
       <p>Qui utilise ce téléphone ?</p>
@@ -57,6 +59,7 @@ function ChoixUtilisateur() {
         </button>
       ))}
       <p class="discret">Les comptes avec mot de passe arrivent à l'étape 3 (synchronisation).</p>
+      </div>
     </div>
   );
 }

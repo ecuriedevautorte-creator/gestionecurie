@@ -1,11 +1,13 @@
 :root {
-  --fond: #f6f3ee;
-  --carte: #ffffff;
-  --texte: #2a211a;
-  --discret: #75685c;
-  --bord: #e4ddd3;
-  --accent: #5b3a1e;
-  --accent-clair: #efe5da;
+  --fond: #f4efe4;
+  --carte: #fffdf8;
+  --texte: #1a2338;
+  --discret: #5f6577;
+  --bord: #e2d8c4;
+  --accent: #1c2b4a;
+  --accent-clair: #e6e9f1;
+  --beige: #d9c7a3;
+  --bleu-fonce: #1c2b4a;
   --rouge: #b42318;
   --rouge-fond: #fdecea;
   --orange: #a15c00;
@@ -14,19 +16,21 @@
   --vert-fond: #e5f4ea;
   --bleu: #1f5c99;
   --bleu-fond: #e6f0fa;
-  --gris-fond: #eeebe7;
+  --gris-fond: #ece6da;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fond: #1b1714;
-    --carte: #26201c;
-    --texte: #f1ebe4;
-    --discret: #b2a596;
-    --bord: #3a322b;
-    --accent: #e0b98f;
-    --accent-clair: #3a2d22;
+    --fond: #111827;
+    --carte: #1a2438;
+    --texte: #f1ebdd;
+    --discret: #a9b0c2;
+    --bord: #2c3750;
+    --accent: #e3cfa4;
+    --accent-clair: #2a3550;
+    --beige: #d9c7a3;
+    --bleu-fonce: #1c2b4a;
     --rouge: #ff8a80;
     --rouge-fond: #45201d;
     --orange: #ffc266;
@@ -35,7 +39,7 @@
     --vert-fond: #1d3a27;
     --bleu: #8cc2f5;
     --bleu-fond: #1b2f45;
-    --gris-fond: #342d27;
+    --gris-fond: #2a3245;
   }
 }
 
@@ -78,7 +82,7 @@ h3 {
 .page {
   max-width: 760px;
   margin: 0 auto;
-  padding: calc(12px + env(safe-area-inset-top)) 16px 24px;
+  padding: 12px 16px 24px;
 }
 
 .discret {
@@ -459,4 +463,32 @@ h3 {
 
 .accueil img {
   border-radius: 16px;
+}
+
+/* Motif losangé bleu foncé et beige */
+.losanges {
+  background-color: var(--bleu-fonce);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M12 0 24 12 12 24 0 12Z' fill='%23d9c7a3'/%3E%3C/svg%3E");
+  background-size: 24px 24px;
+}
+
+.bandeau-motif {
+  height: calc(14px + env(safe-area-inset-top));
+}
+
+.accueil-fond {
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+.accueil-fond .accueil {
+  background: var(--fond);
+  border-radius: 20px;
+  padding: 32px 20px;
+  margin-top: 10vh;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+
+.barre {
+  border-top: 3px solid var(--beige);
 }
