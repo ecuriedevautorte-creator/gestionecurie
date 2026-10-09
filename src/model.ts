@@ -61,6 +61,8 @@ export interface Cheval extends Trace {
   photo?: string | null;
   /** Emplacement sur le plan (paddock, pré, box) : identifiant de src/plan.ts. */
   paddock?: string | null;
+  /** Tous les emplacements du cheval quand il en a plusieurs (le premier est aussi dans « paddock »). */
+  paddocks?: string[];
 }
 
 export type TypeSoin = 'veterinaire' | 'ordonnance' | 'marechal' | 'osteo' | 'dentiste' | 'vaccin' | 'vermifuge';

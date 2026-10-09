@@ -5,7 +5,7 @@ import { db, useLive } from '../db';
 import { enregistrerCheval, enregistrerParametres } from '../ecriture';
 import { estPresent, ID_PARAMETRES, type Cheval } from '../model';
 import { reduirePhoto } from '../photo';
-import { appliquerRepartitionInitiale, EMPLACEMENTS, nomEmplacement } from '../plan';
+import { appliquerRepartitionInitiale, avecEmplacements, EMPLACEMENTS, emplacementsDe, nomEmplacement } from '../plan';
 
 export function PagePlan({ utilisateur }: { utilisateur: string }) {
   const ref = aujourdhui();
@@ -27,8 +27,8 @@ export function PagePlan({ utilisateur }: { utilisateur: string }) {
 
   if (!d) return null;
   const parEmplacement = new Map<string, Cheval[]>();
-  for (const c of d.chevaux) if (c.paddock) parEmplacement.set(c.paddock, [...(parEmplacement.get(c.paddock) ?? []), c]);
-  const sansPlace = d.chevaux.filter((c) => !c.paddock);
+  for (const c of d.chevaux) for (const e of emplacementsDe(c)) parEmplacement.set(e, [...(parEmplacement.get(e) ?? []), c]);
+  const sansPlace = d.chevaux.filter((c) => !emplacementsDe(c).length);
   const occupes = EMPLACEMENTS.filter((e) => parEmplacement.has(e.id));
 
   const choisirPlan = async (e: Event) => {
@@ -120,23 +120,39 @@ function LigneCheval({ cheval, utilisateur }: { cheval: Cheval; utilisateur: str
   return (
     <li class="ligne-paddock">
       <a href={`#/cheval/${cheval.id}`}>{cheval.nom}</a>
-      <ChoixEmplacement
-        valeur={cheval.paddock ?? ''}
-        onChange={(paddock) => enregistrerCheval({ ...cheval, paddock: paddock || null }, utilisateur)}
-        libelle={`Emplacement de ${cheval.nom}`}
-      />
+      <ChoixEmplacements valeurs={emplacementsDe(cheval)} onChange={(ids) => enregistrerCheval(avecEmplacements(cheval, ids), utilisateur)} nomCheval={cheval.nom} />
     </li>
   );
 }
 
-export function ChoixEmplacement({ valeur, onChange, libelle }: { valeur: string; onChange: (v: string) => void; libelle: string }) {
+/** Un ou plusieurs emplacements : une pastille par paddock (✕ pour retirer) et un menu pour en ajouter. */
+export function ChoixEmplacements({ valeurs, onChange, nomCheval }: { valeurs: string[]; onChange: (v: string[]) => void; nomCheval: string }) {
   return (
-    <select class="choix-paddock" aria-label={libelle} value={valeur} onChange={(e) => onChange((e.target as HTMLSelectElement).value)} onClick={(e) => e.stopPropagation()}>
-      <option value="">—</option>
-      {EMPLACEMENTS.map((e) => (
-        <option value={e.id}>{e.nom}</option>
+    <div class="choix-emplacements" onClick={(e) => e.stopPropagation()}>
+      {valeurs.map((id) => (
+        <span class="puce-paddock">
+          {nomEmplacement(id)}
+          <button type="button" aria-label={`Retirer ${nomCheval} de ${nomEmplacement(id)}`} onClick={() => onChange(valeurs.filter((v) => v !== id))}>
+            ✕
+          </button>
+        </span>
       ))}
-    </select>
+      <select
+        class="choix-paddock"
+        aria-label={`Ajouter un emplacement pour ${nomCheval}`}
+        value=""
+        onChange={(e) => {
+          const v = (e.target as HTMLSelectElement).value;
+          (e.target as HTMLSelectElement).value = '';
+          if (v) onChange([...valeurs, v]);
+        }}
+      >
+        <option value="">{valeurs.length ? '+ autre paddock' : '+ placer'}</option>
+        {EMPLACEMENTS.filter((e) => !valeurs.includes(e.id)).map((e) => (
+          <option value={e.id}>{e.nom}</option>
+        ))}
+      </select>
+    </div>
   );
 }
 

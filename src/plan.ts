@@ -2,7 +2,16 @@
 import { db } from './db';
 import { enregistrerCheval, enregistrerParametres } from './ecriture';
 import { cleNom } from './import/excel';
-import { ID_PARAMETRES } from './model';
+import { ID_PARAMETRES, type Cheval } from './model';
+
+/** Emplacements d'un cheval (un cheval peut être sur plusieurs paddocks). */
+export function emplacementsDe(c: Cheval): string[] {
+  return c.paddocks?.length ? c.paddocks : c.paddock ? [c.paddock] : [];
+}
+
+export function avecEmplacements(c: Cheval, ids: string[]): Cheval {
+  return { ...c, paddocks: ids, paddock: ids[0] ?? null };
+}
 
 export interface Emplacement {
   id: string;
@@ -51,8 +60,8 @@ export async function appliquerRepartitionInitiale(auteur: string): Promise<numb
   for (const [emplacement, debuts] of Object.entries(REPARTITION_INITIALE))
     for (const debut of debuts) {
       const trouves = chevaux.filter((c) => cleNom(c.nom).startsWith(debut));
-      if (trouves.length === 1 && !trouves[0].paddock) {
-        await enregistrerCheval({ ...trouves[0], paddock: emplacement }, auteur);
+      if (trouves.length === 1 && !emplacementsDe(trouves[0]).length) {
+        await enregistrerCheval(avecEmplacements(trouves[0], [emplacement]), auteur);
         n++;
       }
     }
@@ -66,8 +75,8 @@ async function corrigerPaddock7(auteur: string): Promise<number> {
   if (p?.paddocksCorrection7) return 0;
   let n = 0;
   for (const c of await db.chevaux.toArray())
-    if (!c.supprimeLe && c.paddock === 'paddock-5' && ['QUERCUS', 'QUILLAC'].some((d) => cleNom(c.nom).startsWith(d))) {
-      await enregistrerCheval({ ...c, paddock: 'paddock-7' }, auteur);
+    if (!c.supprimeLe && emplacementsDe(c).join() === 'paddock-5' && ['QUERCUS', 'QUILLAC'].some((d) => cleNom(c.nom).startsWith(d))) {
+      await enregistrerCheval(avecEmplacements(c, ['paddock-7']), auteur);
       n++;
     }
   await enregistrerParametres({ paddocksCorrection7: true }, auteur);

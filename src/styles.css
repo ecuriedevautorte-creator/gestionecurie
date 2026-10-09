@@ -1137,3 +1137,42 @@ h3 {
   flex: 1 1 0;
   font-size: 0.7rem;
 }
+
+.choix-emplacements {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.champ .choix-emplacements {
+  justify-content: flex-start;
+}
+
+.puce-paddock {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 9px;
+  border-radius: 999px;
+  background: var(--beige);
+  color: #1a2338;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.puce-paddock button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.75rem;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+
+.choix-emplacements .choix-paddock {
+  max-width: 140px;
+  font-size: 13px;
+  padding: 4px 6px;
+}
