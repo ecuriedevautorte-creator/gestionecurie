@@ -2,7 +2,8 @@ import type { ComponentChildren } from 'preact';
 import { ageEnAnnees, ajouterJours, annee, aujourdhui, ecartJours, formater, moisEnLettres } from '../dates';
 import { db, useLive } from '../db';
 import { calculerEcheances, statutDuSoin, statutOrdonnance, type Statut } from '../echeances';
-import { trancherConflit } from '../ecriture';
+import { enregistrerCheval, trancherConflit } from '../ecriture';
+import { reduirePhoto } from '../photo';
 import { useState } from 'preact/hooks';
 import { formaterEuros } from '../import/excel';
 import { DUREE_GESTATION_JOURS, estPresent, LIBELLES_SOIN, type Cheval, type Conflit, type EntreeJournal, type Saillie, type Soin, type TypeSoin } from '../model';
@@ -56,14 +57,18 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
         ← Chevaux
       </a>
       <header class="titre-fiche">
-        {c.photo && <img class="photo-fiche" src={c.photo} alt={`Photo de ${c.nom}`} />}
-        <h1>{c.nom}</h1>
-        <p class="discret">
-          {[c.race, c.sexe, c.robe].filter(Boolean).join(' · ')}
-          {c.naissance && ` · ${c.naissanceAnneeSeule ? `né${c.sexe === 'Femelle' ? 'e' : ''} en ${annee(c.naissance)}` : ageLisible(c.naissance, ref)}`}
-        </p>
-        <span class={present ? 'pastille verte' : 'pastille grise'}>{present ? 'Présent' : `Sorti le ${formater(c.sortie)}`}</span>
-        {c.usage && <span class="pastille bleue"> {c.usage}</span>}
+        <div class="titre-haut">
+          <div class="titre-identite">
+            <h1>{c.nom}</h1>
+            <p class="discret">
+              {[c.race, c.sexe, c.robe].filter(Boolean).join(' · ')}
+              {c.naissance && ` · ${c.naissanceAnneeSeule ? `né${c.sexe === 'Femelle' ? 'e' : ''} en ${annee(c.naissance)}` : ageLisible(c.naissance, ref)}`}
+            </p>
+            <span class={present ? 'pastille verte' : 'pastille grise'}>{present ? 'Présent' : `Sorti le ${formater(c.sortie)}`}</span>
+            {c.usage && <span class="pastille bleue"> {c.usage}</span>}
+          </div>
+          <PhotoFiche cheval={c} utilisateur={utilisateur} />
+        </div>
         <div class="actions-fiche">
           <a class="bouton" href={`#/soin/nouveau?cheval=${c.id}`}>
             + Ajouter un soin
@@ -386,5 +391,65 @@ function Export({ id }: { id: string }) {
       </button>
       {erreur && <span class="erreur petit">{erreur}</span>}
     </div>
+  );
+}
+
+/** Photo à droite du nom : un appui l'agrandit ; sans photo, l'emplacement permet d'en ajouter une. */
+function PhotoFiche({ cheval, utilisateur }: { cheval: Cheval; utilisateur: string }) {
+  const [grande, setGrande] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const choisir = async (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const fichier = input.files?.[0];
+    input.value = '';
+    if (!fichier) return;
+    try {
+      await enregistrerCheval({ ...cheval, photo: await reduirePhoto(fichier) }, utilisateur);
+      setGrande(false);
+      setErreur('');
+    } catch {
+      setErreur("Image illisible");
+    }
+  };
+  const champFichier = <input type="file" accept="image/*" hidden onChange={choisir} />;
+  if (!cheval.photo)
+    return (
+      <label class="photo-titre vide" title="Ajouter une photo">
+        <span aria-hidden="true">📷</span>
+        <span class="petit">{erreur || 'Ajouter une photo'}</span>
+        {champFichier}
+      </label>
+    );
+  return (
+    <>
+      <button type="button" class="photo-titre" onClick={() => setGrande(true)} aria-label={`Agrandir la photo de ${cheval.nom}`}>
+        <img src={cheval.photo} alt="" />
+      </button>
+      {grande && (
+        <div class="visionneuse" role="dialog" aria-label={`Photo de ${cheval.nom}`} onClick={(e) => e.target === e.currentTarget && setGrande(false)}>
+          <img src={cheval.photo} alt={`Photo de ${cheval.nom}`} />
+          <div class="visionneuse-actions">
+            <label class="bouton secondaire">
+              Changer la photo
+              {champFichier}
+            </label>
+            <button
+              type="button"
+              class="bouton-texte"
+              onClick={async () => {
+                if (!confirm('Retirer la photo de ce cheval ?')) return;
+                await enregistrerCheval({ ...cheval, photo: null }, utilisateur);
+                setGrande(false);
+              }}
+            >
+              Retirer
+            </button>
+            <button type="button" class="bouton" onClick={() => setGrande(false)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
