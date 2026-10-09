@@ -5,6 +5,7 @@
 import type ExcelJS from 'exceljs';
 import { lireDateFr, versISO, type ISODate } from '../dates';
 import type { Anomalie, Cheval, Intervalle, Proprietaire, Saillie, Sexe, Soin, TypeSoin } from '../model';
+import { arbitrage, DATE_ARBITRAGES } from './arbitrages';
 
 export interface ResultatImport {
   proprietaires: Proprietaire[];
@@ -160,6 +161,15 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
   const lignesIgnorees: Record<string, number> = {};
   let compteur = 0;
   const signaler = (a: Omit<Anomalie, 'id'>) => anomalies.push({ id: `a${++compteur}`, ...a });
+  /** Point à trancher : s'il a déjà été tranché (« garder »), il passe en information et la fiche n'a pas de bandeau. */
+  const aTrancher = (type: string, a: Omit<Anomalie, 'id' | 'gravite'> & { cheval: string }, fiche?: { aVerifier?: string[] }) => {
+    if (arbitrage(type, a.cheval) === 'garder') {
+      signaler({ ...a, gravite: 'info', message: `${a.message} Conservé tel quel (validé le ${DATE_ARBITRAGES}).` });
+      return;
+    }
+    signaler({ ...a, gravite: 'a-trancher' });
+    fiche?.aVerifier?.push(a.message);
+  };
   const trace = (source: string) => ({
     id: crypto.randomUUID(),
     creeLe: opts.maintenant,
@@ -222,9 +232,8 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
     if (typeof t.v === 'number') c.transpondeur = BigInt(Math.round(t.v)).toString();
     else if (typeof t.v === 'string') c.transpondeur = t.v.replace(/\s/g, '').replace(/\.0$/, '');
     if (c.transpondeur && !/^\d{15}$/.test(c.transpondeur)) {
-      const msg = `Transpondeur ${c.transpondeur} : ${c.transpondeur.replace(/\D/g, '').length} chiffres au lieu de 15. Importé tel quel, à vérifier sur le passeport.`;
-      signaler({ gravite: 'a-trancher', onglet: 'Chevaux', ligne: l.numero, cheval: c.nom, message: msg });
-      c.aVerifier!.push(msg);
+      const msg = `Transpondeur ${c.transpondeur} : ${c.transpondeur.replace(/\D/g, '').length} chiffres au lieu de 15, à vérifier sur le passeport.`;
+      aTrancher('transpondeur', { onglet: 'Chevaux', ligne: l.numero, cheval: c.nom, message: msg }, c);
     }
     if (!c.naissance && !c.sire && !c.transpondeur) {
       signaler({ gravite: 'info', onglet: 'Chevaux', ligne: l.numero, cheval: c.nom, message: 'Ni date de naissance, ni SIRE, ni transpondeur : fiche importée incomplète.' });
@@ -271,7 +280,7 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
       const fa = a[a.length - 1];
       const fb = b[b.length - 1];
       if (a.length > 1 && b.length > 1 && fa.length >= 4 && distance(fa, fb) === 1) {
-        signaler({ gravite: 'a-trancher', onglet: 'Chevaux', cheval: `${chevaux[i].nom} / ${chevaux[j].nom}`, message: `« ${fa} » et « ${fb} » ne diffèrent que d'une lettre : faute de frappe ?` });
+        aTrancher('nom-proche', { onglet: 'Chevaux', cheval: `${chevaux[i].nom} / ${chevaux[j].nom}`, message: `« ${fa} » et « ${fb} » ne diffèrent que d'une lettre : faute de frappe ?` });
       }
     }
   }
@@ -362,7 +371,7 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
     s.cout = num(l, 'Cout (EUR)');
     s.prochaineManuelle = dateDe(cell(l, 'Prochain RDV'));
     s.lienFacture = txt(l, 'Lien Facture');
-    if (!s.motif) {
+    if (!s.motif && arbitrage('sans-motif', cleNom(txt(l, 'Cheval'))) !== 'garder') {
       s.motif = 'Non précisé';
       signaler({ gravite: 'corrige', onglet: 'Veterinaire', ligne: l.numero, cheval: txt(l, 'Cheval'), message: 'Visite sans motif.', correction: 'Motif « Non précisé »' });
     }
@@ -446,8 +455,7 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
     const ancien = Number(s.date.slice(0, 4)) < Number(opts.ref.slice(0, 4)) - 5;
     if (s.date.endsWith('-01-01') || ancien) {
       const msg = `Vaccin ${s.precision} daté du ${s.date.split('-').reverse().join('/')} : date par défaut ? Le cheval sera EN RETARD dès l'import.`;
-      signaler({ gravite: 'a-trancher', onglet: 'Vaccins', ligne: Number(s.source!.split('ligne ')[1]), cheval: c.nom, message: msg });
-      s.aVerifier!.push(msg);
+      aTrancher('vaccin-date', { onglet: 'Vaccins', ligne: Number(s.source!.split('ligne ')[1]), cheval: c.nom, message: msg }, s);
     }
   }
 
@@ -495,8 +503,7 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
     for (const [i, e] of s.echos.entries()) {
       if (e.date && s.dateSaillie && e.date < s.dateSaillie) {
         const msg = `Écho ${i + 1} du ${e.date.split('-').reverse().join('/')} antérieure à la saillie du ${s.dateSaillie.split('-').reverse().join('/')} : une des deux dates est fausse.`;
-        signaler({ gravite: 'a-trancher', onglet: 'Poulinieres', ligne: l.numero, cheval: jument.nom, message: msg });
-        s.aVerifier!.push(msg);
+        aTrancher('echo-avant-saillie', { onglet: 'Poulinieres', ligne: l.numero, cheval: jument.nom, message: msg }, s);
       }
     }
     if (s.poulainNom) {
@@ -505,14 +512,18 @@ export function analyserClasseur(wb: ExcelJS.Workbook, opts: OptionsImport): Res
         s.poulainId = poulain.id;
         if (s.poulinage && poulain.naissance && poulain.naissance !== s.poulinage) {
           const msg = `Né le ${poulain.naissance.split('-').reverse().join('/')} selon Chevaux, mais pouliné le ${s.poulinage.split('-').reverse().join('/')} selon Poulinières.`;
-          signaler({ gravite: 'a-trancher', onglet: 'Chevaux', ligne: Number(poulain.source!.split('ligne ')[1]), cheval: poulain.nom, message: msg });
-          poulain.aVerifier!.push(msg);
+          aTrancher('naissance-poulinage', { onglet: 'Chevaux', ligne: Number(poulain.source!.split('ligne ')[1]), cheval: poulain.nom, message: msg }, poulain);
         }
         // Père et mère inversés par rapport au suivi de la jument
         if (cleNom(poulain.pere) === cleNom(jument.nom) || (s.etalon && cleNom(poulain.mere) === cleNom(s.etalon))) {
           const msg = `Père (« ${poulain.pere} ») et mère (« ${poulain.mere} ») inversés : la mère est ${jument.nom}, l'étalon ${s.etalon}.`;
-          signaler({ gravite: 'a-trancher', onglet: 'Chevaux', ligne: Number(poulain.source!.split('ligne ')[1]), cheval: poulain.nom, message: msg });
-          poulain.aVerifier!.push(msg);
+          const ligne = Number(poulain.source!.split('ligne ')[1]);
+          if (arbitrage('parents-inverses', poulain.nom) === 'corriger') {
+            [poulain.pere, poulain.mere] = [poulain.mere, poulain.pere];
+            signaler({ gravite: 'corrige', onglet: 'Chevaux', ligne, cheval: poulain.nom, message: msg, correction: `Père ${poulain.pere}, mère ${poulain.mere} (validé le ${DATE_ARBITRAGES})` });
+          } else {
+            aTrancher('parents-inverses', { onglet: 'Chevaux', ligne, cheval: poulain.nom, message: msg }, poulain);
+          }
         }
       }
     }
