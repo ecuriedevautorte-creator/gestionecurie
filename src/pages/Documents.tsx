@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { aujourdhui, formater } from '../dates';
 import { db, useLive } from '../db';
-import { ajouterDocument, analyserZip, importerZip, obtenirFichier, restaurerDocument, supprimerDocument, tailleLisible, type FichierZip } from '../documents';
+import { ajouterDocument, analyserZip, importerZip, obtenirFichier, restaurerDocument, supprimerDocument, tailleLisible, telechargerTout, type FichierZip } from '../documents';
 import { proposer } from '../export/cheval';
 import { cleNom } from '../import/excel';
 import { CORBEILLE_JOURS, estPresent, type DocumentCheval } from '../model';
@@ -49,6 +49,7 @@ export function PageDocuments({ utilisateur }: { utilisateur: string }) {
             </li>
           ))}
         </ul>
+        {donnees.documents.length > 0 && <BoutonToutTelecharger nomFichier="Documents - Ecurie de Vautorte" nombre={donnees.documents.length} />}
         {!q && (
           <button class="bouton-texte" onClick={() => setVoirSortis((v) => !v)}>
             {voirSortis ? 'Masquer les chevaux sortis sans document' : 'Afficher aussi les chevaux sortis'}
@@ -214,6 +215,8 @@ export function PageDossier({ id, utilisateur }: { id: string; utilisateur: stri
       <p class="discret petit">PDF, photos (prises avec le téléphone ou depuis la galerie), Word, Excel. 25 Mo maximum par fichier.</p>
       {erreur && <p class="erreur">{erreur}</p>}
 
+      {actifs.length > 0 && <BoutonToutTelecharger chevalId={id} nomFichier={`Documents - ${d.cheval.nom}`} nombre={actifs.length} />}
+
       <section class="carte">
         {actifs.length === 0 ? (
           <p class="discret">Aucun document pour l'instant.</p>
@@ -285,6 +288,38 @@ export function PageDossier({ id, utilisateur }: { id: string; utilisateur: stri
             </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function BoutonToutTelecharger({ chevalId, nomFichier, nombre }: { chevalId?: string; nomFichier: string; nombre: number }) {
+  const [etat, setEtat] = useState('');
+  const [manquants, setManquants] = useState<string[]>([]);
+  return (
+    <div class="tout-telecharger">
+      <button
+        class="bouton secondaire"
+        disabled={!!etat}
+        onClick={async () => {
+          setManquants([]);
+          try {
+            const r = await telechargerTout(chevalId, (fait, total) => setEtat(`Préparation ${fait} / ${total}…`));
+            setManquants(r.manquants);
+            await proposer(r.blob, `${nomFichier}.zip`);
+          } catch (e) {
+            console.error(e);
+            setManquants(["Le zip n'a pas pu être préparé."]);
+          }
+          setEtat('');
+        }}
+      >
+        {etat || `⬇ Télécharger ${chevalId ? 'tout le dossier' : 'tous les documents'} (${nombre}, .zip)`}
+      </button>
+      {manquants.length > 0 && (
+        <p class="erreur petit">
+          Absents du zip (il faut du réseau pour les récupérer) : {manquants.join(', ')}
+        </p>
       )}
     </div>
   );

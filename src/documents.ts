@@ -127,3 +127,27 @@ export async function importerZip(fichiers: FichierZip[], auteur: string, avance
   }
   return n;
 }
+
+/** Tous les documents (d'un cheval, ou de tous) dans un zip : un dossier par cheval. */
+export async function telechargerTout(chevalId?: string, avance?: (fait: number, total: number) => void): Promise<{ blob: Blob; manquants: string[] }> {
+  const { default: JSZip } = await import('jszip');
+  const zip = new JSZip();
+  const noms = new Map((await db.chevaux.toArray()).map((c) => [c.id, c.nom]));
+  const docs = (await db.documents.toArray()).filter((d) => !d.supprimeLe && (!chevalId || d.chevalId === chevalId));
+  const manquants: string[] = [];
+  const pris = new Set<string>();
+  for (const [i, d] of docs.entries()) {
+    avance?.(i, docs.length);
+    const dossier = (noms.get(d.chevalId) ?? 'Sans cheval').replace(/[\\/:*?"<>|]/g, '_');
+    let nom = `${dossier}/${d.nom.replace(/[\\/:*?"<>|]/g, '_')}`;
+    for (let n = 2; pris.has(nom); n++) nom = `${dossier}/${n} - ${d.nom}`;
+    pris.add(nom);
+    try {
+      zip.file(nom, await obtenirFichier(d));
+    } catch {
+      manquants.push(`${noms.get(d.chevalId) ?? '?'} : ${d.nom}`);
+    }
+  }
+  avance?.(docs.length, docs.length);
+  return { blob: await zip.generateAsync({ type: 'blob' }), manquants };
+}
