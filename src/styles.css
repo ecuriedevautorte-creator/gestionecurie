@@ -1,0 +1,462 @@
+:root {
+  --fond: #f6f3ee;
+  --carte: #ffffff;
+  --texte: #2a211a;
+  --discret: #75685c;
+  --bord: #e4ddd3;
+  --accent: #5b3a1e;
+  --accent-clair: #efe5da;
+  --rouge: #b42318;
+  --rouge-fond: #fdecea;
+  --orange: #a15c00;
+  --orange-fond: #fff3dc;
+  --vert: #24713f;
+  --vert-fond: #e5f4ea;
+  --bleu: #1f5c99;
+  --bleu-fond: #e6f0fa;
+  --gris-fond: #eeebe7;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #1b1714;
+    --carte: #26201c;
+    --texte: #f1ebe4;
+    --discret: #b2a596;
+    --bord: #3a322b;
+    --accent: #e0b98f;
+    --accent-clair: #3a2d22;
+    --rouge: #ff8a80;
+    --rouge-fond: #45201d;
+    --orange: #ffc266;
+    --orange-fond: #43321a;
+    --vert: #7fd69b;
+    --vert-fond: #1d3a27;
+    --bleu: #8cc2f5;
+    --bleu-fond: #1b2f45;
+    --gris-fond: #342d27;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 16px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0.2rem 0 0.6rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.6rem;
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 0.8rem 0 0.4rem;
+}
+
+.appli {
+  min-height: 100vh;
+  padding-bottom: calc(68px + env(safe-area-inset-bottom));
+}
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 24px;
+}
+
+.discret {
+  color: var(--discret);
+}
+
+.petit {
+  font-size: 0.85rem;
+}
+
+.gros {
+  font-size: 1.35rem;
+}
+
+.carte {
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+
+.carte.vide {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.bouton {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--fond);
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.bouton.large {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Barre de navigation du bas */
+.barre {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  background: var(--carte);
+  border-top: 1px solid var(--bord);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.barre a {
+  flex: 0 1 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--discret);
+  text-decoration: none;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.barre a span {
+  font-size: 1.3rem;
+}
+
+.barre a.actif {
+  color: var(--accent);
+  background: var(--accent-clair);
+  font-weight: 600;
+}
+
+/* Liste des chevaux */
+.entete-page {
+  position: sticky;
+  top: 0;
+  background: var(--fond);
+  padding: 4px 0 8px;
+  z-index: 5;
+}
+
+.recherche {
+  width: 100%;
+  font: inherit;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bord);
+  background: var(--carte);
+  color: var(--texte);
+}
+
+.puces {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.puce {
+  border: 1px solid var(--bord);
+  background: var(--carte);
+  color: var(--texte);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.puce.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--fond);
+}
+
+.compte {
+  margin: 4px 0 6px;
+  font-size: 0.85rem;
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ligne-texte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ligne-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 45%;
+}
+
+.pastille {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+
+.pastille.rouge {
+  color: var(--rouge);
+  background: var(--rouge-fond);
+}
+
+.pastille.orange {
+  color: var(--orange);
+  background: var(--orange-fond);
+}
+
+.pastille.verte {
+  color: var(--vert);
+  background: var(--vert-fond);
+}
+
+.pastille.bleue {
+  color: var(--bleu);
+  background: var(--bleu-fond);
+}
+
+.pastille.grise {
+  color: var(--discret);
+  background: var(--gris-fond);
+}
+
+/* Fiche cheval */
+.retour {
+  display: inline-block;
+  padding: 6px 0;
+  text-decoration: none;
+}
+
+.titre-fiche p {
+  margin: 0 0 6px;
+}
+
+.bandeau {
+  background: var(--bleu-fond);
+  color: var(--texte);
+  border-left: 4px solid var(--bleu);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+
+.bandeau ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.echeances,
+.repartition {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.echeances li,
+.repartition li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bord);
+}
+
+.echeances li:last-child,
+.repartition li:last-child {
+  border-bottom: 0;
+}
+
+.echeance-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.totaux {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.totaux div {
+  display: flex;
+  flex-direction: column;
+}
+
+.identite {
+  display: grid;
+  grid-template-columns: minmax(110px, 40%) 1fr;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.identite dt {
+  color: var(--discret);
+  font-size: 0.9rem;
+}
+
+.identite dd {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.saillie {
+  border-top: 1px solid var(--bord);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.saillie p {
+  margin: 4px 0;
+}
+
+/* Frise des soins */
+.frise-mois h3 {
+  text-transform: capitalize;
+  color: var(--discret);
+}
+
+.frise ol {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 6px;
+  border-left: 2px solid var(--bord);
+}
+
+.soin {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0 10px;
+  margin-left: -17px;
+}
+
+.soin-icone {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--carte);
+  border: 2px solid var(--bord);
+  border-radius: 50%;
+  font-size: 0.95rem;
+}
+
+.soin-corps {
+  flex: 1;
+  min-width: 0;
+}
+
+.soin-corps p {
+  margin: 2px 0;
+}
+
+.soin-tete {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Import */
+.rapport ul {
+  padding-left: 18px;
+  margin: 4px 0 8px;
+}
+
+.rapport li {
+  margin-bottom: 6px;
+}
+
+.rapport-a-trancher h3 {
+  color: var(--bleu);
+}
+
+.rapport-corrige h3 {
+  color: var(--vert);
+}
+
+.correction {
+  color: var(--vert);
+}
+
+.erreur {
+  color: var(--rouge);
+}
+
+.succes {
+  color: var(--vert);
+  font-weight: 600;
+}
+
+/* Premier lancement */
+.accueil {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 18vh 16px 24px;
+  text-align: center;
+}
+
+.accueil img {
+  border-radius: 16px;
+}
