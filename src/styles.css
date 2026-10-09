@@ -796,3 +796,11 @@ h3 {
   color: #1a2338;
   border-color: #cdbf9f;
 }
+
+.export {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}

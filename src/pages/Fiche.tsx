@@ -3,6 +3,7 @@ import { ageEnAnnees, ajouterJours, annee, aujourdhui, ecartJours, formater, moi
 import { db, useLive } from '../db';
 import { calculerEcheances, statutDuSoin, statutOrdonnance, type Statut } from '../echeances';
 import { trancherConflit } from '../ecriture';
+import { useState } from 'preact/hooks';
 import { formaterEuros } from '../import/excel';
 import { DUREE_GESTATION_JOURS, estPresent, LIBELLES_SOIN, type Cheval, type Conflit, type EntreeJournal, type Saillie, type Soin, type TypeSoin } from '../model';
 
@@ -71,6 +72,7 @@ export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string
             Modifier
           </a>
         </div>
+        <Export id={c.id} />
       </header>
 
       {aVerifier.length > 0 && (
@@ -354,6 +356,35 @@ function Conflits(props: { utilisateur: string; liste: { table: EntreeJournal['t
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function Export({ id }: { id: string }) {
+  const [enCours, setEnCours] = useState<'' | 'excel' | 'pdf'>('');
+  const [erreur, setErreur] = useState('');
+  const lancer = async (format: 'excel' | 'pdf') => {
+    setEnCours(format);
+    setErreur('');
+    try {
+      const m = await import('../export/cheval');
+      await (format === 'excel' ? m.exporterExcel(id) : m.exporterPdf(id));
+    } catch (e) {
+      console.error(e);
+      setErreur("L'export n'a pas abouti.");
+    }
+    setEnCours('');
+  };
+  return (
+    <div class="export">
+      <span class="discret petit">Exporter la fiche :</span>
+      <button class="bouton secondaire petit-bouton" disabled={!!enCours} onClick={() => lancer('excel')}>
+        {enCours === 'excel' ? 'Préparation…' : 'Excel'}
+      </button>
+      <button class="bouton secondaire petit-bouton" disabled={!!enCours} onClick={() => lancer('pdf')}>
+        {enCours === 'pdf' ? 'Préparation…' : 'PDF'}
+      </button>
+      {erreur && <span class="erreur petit">{erreur}</span>}
     </div>
   );
 }
