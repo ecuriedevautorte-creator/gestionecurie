@@ -12,6 +12,13 @@ export interface Trace {
   aVerifier?: string[];
   /** D'où vient la fiche, par exemple « Excel, Maréchal ligne 15 ». */
   source?: string;
+  /** Modifications simultanées du même champ par les deux gérants, à trancher. */
+  conflits?: Conflit[];
+}
+
+export interface Conflit {
+  champ: string;
+  valeurs: { par: string; le: string; valeur: unknown }[];
 }
 
 export type Sexe = 'Mâle' | 'Femelle' | 'Hongre' | '';
@@ -50,6 +57,8 @@ export interface Cheval extends Trace {
   usage: Usage | null;
   /** Intervalles propres à ce cheval, prioritaires sur les réglages généraux. */
   intervalles?: Partial<Record<CleEcheance, Intervalle>>;
+  /** Photo réduite (JPEG en data URL), partagée avec la fiche. */
+  photo?: string | null;
 }
 
 export type TypeSoin = 'veterinaire' | 'ordonnance' | 'marechal' | 'osteo' | 'dentiste' | 'vaccin' | 'vermifuge';
@@ -111,10 +120,25 @@ export const INTERVALLES_PAR_DEFAUT: Record<string, Intervalle> = {
   osteo: { valeur: 12, unite: 'mois' },
   dentiste: { valeur: 24, unite: 'mois' },
   'vaccin:grippe': { valeur: 12, unite: 'mois' },
-  'vaccin:grippe-competition': { valeur: 6, unite: 'mois' },
   'vaccin:rhinopneumonie': { valeur: 12, unite: 'mois' },
   'vaccin:tetanos': { valeur: 12, unite: 'mois' },
 };
+
+/** Intervalles propres à une catégorie de chevaux (vide = intervalle par défaut). 0 = pas de rappel. */
+export type IntervallesParUsage = Partial<Record<Usage, Record<string, Intervalle>>>;
+
+/** Grippe tous les 6 mois pour les chevaux qui courent ou concourent (règlement des courses et de la FFE). */
+export const INTERVALLES_USAGE_PAR_DEFAUT: IntervallesParUsage = {
+  Course: { 'vaccin:grippe': { valeur: 6, unite: 'mois' } },
+  'Sport compétition': { 'vaccin:grippe': { valeur: 6, unite: 'mois' } },
+};
+
+/** Réglages partagés entre les deux gérants (une seule fiche, synchronisée comme les autres). */
+export interface Parametres extends Trace {
+  intervalles: Record<string, Intervalle>;
+  intervallesUsage: IntervallesParUsage;
+}
+export const ID_PARAMETRES = '00000000-0000-4000-8000-000000000001';
 
 export interface Anomalie {
   id: string;
@@ -130,10 +154,13 @@ export function estPresent(c: Cheval, ref: ISODate): boolean {
   return !c.sortie || c.sortie > ref;
 }
 
+export const TABLES_SYNCHRO = ['chevaux', 'soins', 'saillies', 'proprietaires', 'parametres'] as const;
+export type TableSynchro = (typeof TABLES_SYNCHRO)[number];
+
 /** Une ligne par création, modification ou suppression : qui, quand, et les valeurs avant / après. */
 export interface EntreeJournal {
   id: string;
-  table: 'chevaux' | 'soins' | 'saillies' | 'proprietaires';
+  table: TableSynchro;
   ficheId: string;
   operation: 'creation' | 'modification' | 'suppression' | 'restauration';
   le: string;
@@ -142,6 +169,8 @@ export interface EntreeJournal {
   changements: Record<string, { avant: unknown; apres: unknown }>;
   /** 0 tant que la saisie n'est pas envoyée au serveur (étape 3). */
   envoye: 0 | 1;
+  /** Dernière révision du serveur connue au moment de la saisie (sert à repérer les modifications simultanées). */
+  base?: number;
 }
 
 export const CORBEILLE_JOURS = 30;

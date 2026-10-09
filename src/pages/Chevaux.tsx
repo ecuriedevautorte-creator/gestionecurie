@@ -51,6 +51,9 @@ export function PageChevaux() {
           <a class="bouton" href="#/import">
             Importer le classeur Excel
           </a>
+          <a class="bouton secondaire" href="#/cheval/nouveau">
+            + Nouveau cheval
+          </a>
         </div>
       </div>
     );
@@ -77,7 +80,12 @@ export function PageChevaux() {
         <span>L'Écurie de Vautorte</span>
       </div>
       <header class="entete-page">
-        <h1>Chevaux</h1>
+        <div class="titre-ligne">
+          <h1>Chevaux</h1>
+          <a class="bouton secondaire petit-bouton" href="#/cheval/nouveau">
+            + Nouveau cheval
+          </a>
+        </div>
         <input
           type="search"
           class="recherche"
@@ -112,6 +120,7 @@ function LigneCheval(props: { cheval: Cheval; proprio?: string; alerte?: { retar
   return (
     <li>
       <a class="ligne" href={`#/cheval/${c.id}`}>
+        {c.photo && <img class="vignette" src={c.photo} alt="" loading="lazy" />}
         <div class="ligne-texte">
           <strong>{c.nom}</strong>
           <span class="discret">{details.join(' · ')}</span>
@@ -121,7 +130,7 @@ function LigneCheval(props: { cheval: Cheval; proprio?: string; alerte?: { retar
           {!estPresent(c, props.ref_) && <span class="pastille grise">Sorti</span>}
           {alerte && alerte.retard > 0 && <span class="pastille rouge">{alerte.retard} en retard</span>}
           {alerte && alerte.bientot > 0 && <span class="pastille orange">{alerte.bientot} bientôt</span>}
-          {(c.aVerifier?.length ?? 0) > 0 && (
+          {((c.aVerifier?.length ?? 0) > 0 || (c.conflits?.length ?? 0) > 0) && (
             <span class="pastille bleue" title="Points à vérifier">
               À vérifier
             </span>

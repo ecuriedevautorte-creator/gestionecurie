@@ -2,8 +2,9 @@ import type { ComponentChildren } from 'preact';
 import { ageEnAnnees, ajouterJours, annee, aujourdhui, ecartJours, formater, moisEnLettres } from '../dates';
 import { db, useLive } from '../db';
 import { calculerEcheances, statutDuSoin, statutOrdonnance, type Statut } from '../echeances';
+import { trancherConflit } from '../ecriture';
 import { formaterEuros } from '../import/excel';
-import { DUREE_GESTATION_JOURS, estPresent, LIBELLES_SOIN, type Cheval, type Saillie, type Soin, type TypeSoin } from '../model';
+import { DUREE_GESTATION_JOURS, estPresent, LIBELLES_SOIN, type Cheval, type Conflit, type EntreeJournal, type Saillie, type Soin, type TypeSoin } from '../model';
 
 const ICONES: Record<TypeSoin, string> = {
   veterinaire: '🩺',
@@ -15,7 +16,7 @@ const ICONES: Record<TypeSoin, string> = {
   vermifuge: '🪱',
 };
 
-export function PageFiche({ id }: { id: string }) {
+export function PageFiche({ id, utilisateur }: { id: string; utilisateur: string }) {
   const ref = aujourdhui();
   const d = useLive(async () => {
     const cheval = await db.chevaux.get(id);
@@ -54,6 +55,7 @@ export function PageFiche({ id }: { id: string }) {
         ← Chevaux
       </a>
       <header class="titre-fiche">
+        {c.photo && <img class="photo-fiche" src={c.photo} alt={`Photo de ${c.nom}`} />}
         <h1>{c.nom}</h1>
         <p class="discret">
           {[c.race, c.sexe, c.robe].filter(Boolean).join(' · ')}
@@ -81,6 +83,15 @@ export function PageFiche({ id }: { id: string }) {
           </ul>
         </div>
       )}
+
+      <Conflits
+        utilisateur={utilisateur}
+        liste={[
+          ...(c.conflits ?? []).map((x) => ({ table: 'chevaux' as const, id: c.id, quoi: 'Fiche', conflit: x })),
+          ...soins.flatMap((s) => (s.conflits ?? []).map((x) => ({ table: 'soins' as const, id: s.id, quoi: `${LIBELLES_SOIN[s.type]} du ${formater(s.date)}`, conflit: x }))),
+          ...sesSaillies.flatMap((s) => (s.conflits ?? []).map((x) => ({ table: 'saillies' as const, id: s.id, quoi: 'Suivi de poulinière', conflit: x }))),
+        ]}
+      />
 
       <Section titre="Prochaines échéances">
         {!present ? (
@@ -311,6 +322,38 @@ function Frise({ soins, cheval, ref_ }: { soins: Soin[]; cheval: Cheval; ref_: s
           </ol>
         </div>
       ))}
+    </div>
+  );
+}
+
+function valeurLisible(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '(vide)';
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return formater(v);
+  if (typeof v === 'string' && v.startsWith('data:image')) return 'photo';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+/** Deux gérants ont modifié le même champ sans voir la modification de l'autre : on choisit la bonne valeur. */
+function Conflits(props: { utilisateur: string; liste: { table: EntreeJournal['table']; id: string; quoi: string; conflit: Conflit }[] }) {
+  if (!props.liste.length) return null;
+  return (
+    <div class="bandeau">
+      <strong>Modifications simultanées à vérifier</strong>
+      <ul>
+        {props.liste.map(({ table, id, quoi, conflit }) => (
+          <li>
+            {quoi}, champ « {conflit.champ} » :
+            <div class="choix-conflit">
+              {conflit.valeurs.map((v) => (
+                <button class="bouton secondaire petit-bouton" onClick={() => trancherConflit(table, id, conflit.champ, v.valeur, props.utilisateur)}>
+                  Garder « {valeurLisible(v.valeur)} » ({v.par})
+                </button>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

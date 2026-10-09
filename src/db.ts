@@ -1,6 +1,6 @@
 import Dexie, { liveQuery, type Table } from 'dexie';
 import { useEffect, useState } from 'preact/hooks';
-import type { Anomalie, Cheval, EntreeJournal, Proprietaire, Saillie, Soin } from './model';
+import type { Anomalie, Cheval, EntreeJournal, Parametres, Proprietaire, Saillie, Soin } from './model';
 import type { ResultatImport } from './import/excel';
 
 /** Base locale du téléphone : l'application lit et écrit toujours ici d'abord, d'où le fonctionnement hors réseau. */
@@ -12,9 +12,10 @@ export class EcurieDB extends Dexie {
   anomalies!: Table<Anomalie, string>;
   reglages!: Table<{ cle: string; valeur: unknown }, string>;
   journal!: Table<EntreeJournal, string>;
+  parametres!: Table<Parametres, string>;
 
-  constructor() {
-    super('gestion-ecurie');
+  constructor(nom = 'gestion-ecurie') {
+    super(nom);
     this.version(1).stores({
       chevaux: 'id, nom, modifieLe',
       soins: 'id, chevalId, type, date, modifieLe',
@@ -25,10 +26,18 @@ export class EcurieDB extends Dexie {
     });
     // v2 : journal de toutes les saisies (traçabilité, puis envoi au serveur à l'étape 3)
     this.version(2).stores({ journal: 'id, table, ficheId, le, envoye' });
+    // v3 : réglages partagés entre les deux gérants (intervalles généraux et par catégorie)
+    this.version(3).stores({ parametres: 'id' });
   }
 }
 
-export const db = new EcurieDB();
+export let db = new EcurieDB();
+
+/** Pour les tests : simule un autre appareil (une autre base locale). */
+export function changerDeBase(nom: string): EcurieDB {
+  db = new EcurieDB(nom);
+  return db;
+}
 
 /** Relit automatiquement la base à chaque changement. */
 export function useLive<T>(requete: () => Promise<T>, deps: unknown[] = []): T | undefined {

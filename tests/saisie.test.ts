@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { db } from '../src/db';
 import { enregistrerSoin, restaurerSoin, supprimerSoin } from '../src/ecriture';
-import { INTERVALLES_PAR_DEFAUT, type Cheval, type Soin } from '../src/model';
-import { intervallePropose } from '../src/reglages';
+import type { Cheval, Soin } from '../src/model';
+import { intervallePropose, REGLAGES_PAR_DEFAUT as INTERVALLES_PAR_DEFAUT } from '../src/reglages';
 
 const cheval = (usage: Cheval['usage'], intervalles?: Cheval['intervalles']) => ({ usage, intervalles }) as Cheval;
 
@@ -16,6 +16,13 @@ describe('intervalle proposé', () => {
   it('grippe à 6 mois en compétition, 12 sinon ; vaccin combiné = le plus court', () => {
     expect(intervallePropose('vaccin', 'TG', cheval('Loisir'), INTERVALLES_PAR_DEFAUT)).toEqual({ valeur: 12, unite: 'mois' });
     expect(intervallePropose('vaccin', 'TGRhino', cheval('Course'), INTERVALLES_PAR_DEFAUT)).toEqual({ valeur: 6, unite: 'mois' });
+  });
+  it('intervalles par catégorie : retraite sans maréchal, cheval prioritaire sur sa catégorie', () => {
+    const r = { ...INTERVALLES_PAR_DEFAUT, parUsage: { ...INTERVALLES_PAR_DEFAUT.parUsage, Retraite: { marechal: { valeur: 0, unite: 'mois' as const }, vermifuge: { valeur: 6, unite: 'mois' as const } } } };
+    expect(intervallePropose('marechal', '', cheval('Retraite'), r)).toBeNull();
+    expect(intervallePropose('vermifuge', '', cheval('Retraite'), r)).toEqual({ valeur: 6, unite: 'mois' });
+    expect(intervallePropose('vermifuge', '', cheval('Loisir'), r)).toEqual({ valeur: 3, unite: 'mois' });
+    expect(intervallePropose('vermifuge', '', cheval('Retraite', { vermifuge: { valeur: 2, unite: 'mois' } }), r)).toEqual({ valeur: 2, unite: 'mois' });
   });
   it("priorité à l'intervalle propre au cheval", () => {
     expect(intervallePropose('marechal', '', cheval(null, { marechal: { valeur: 6, unite: 'semaines' } }), INTERVALLES_PAR_DEFAUT)).toEqual({ valeur: 6, unite: 'semaines' });

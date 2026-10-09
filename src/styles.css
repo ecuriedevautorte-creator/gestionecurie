@@ -701,3 +701,98 @@ h3 {
 .barre a.ajouter span {
   font-weight: 700;
 }
+
+/* Étape 3 : nouveau cheval, photos, conflits, connexion */
+.titre-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bouton.petit-bouton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.ligne .ligne-texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.vignette {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--beige);
+  background: var(--fond-logo);
+}
+
+.vignette.vide {
+  background-color: var(--bleu-fonce);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M6 0 12 6 6 12 0 6Z' fill='%23d9c7a3'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  opacity: 0.35;
+}
+
+.photo-fiche {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 3px solid var(--beige);
+  margin-bottom: 10px;
+}
+
+.photo-edition {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.photo-cheval {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--beige);
+}
+
+.photo-cheval.vide {
+  display: grid;
+  place-items: center;
+  font-size: 2.5rem;
+  background: var(--fond-logo);
+}
+
+.photo-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.choix-conflit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+
+.accueil-fond form.accueil .champ {
+  text-align: left;
+}
+
+.accueil-fond form.accueil input {
+  background: #fff;
+  color: #1a2338;
+  border-color: #cdbf9f;
+}

@@ -81,7 +81,7 @@ function Formulaire(props: {
 }) {
   const { chevaux, soins, existant, nouveau } = props;
   const ref = aujourdhui();
-  const generaux = useIntervalles();
+  const reglages = useIntervalles();
   const [f, setF] = useState<Formulaire>(() => etatInitial(existant, props.modele, props.params));
   const [groupe, setGroupe] = useState(false);
   const [erreur, setErreur] = useState('');
@@ -93,8 +93,8 @@ function Formulaire(props: {
   // Intervalle proposé automatiquement selon le type, le vaccin et le cheval
   useEffect(() => {
     if (!f.intervalleAuto) return;
-    maj({ intervalle: intervallePropose(f.type, f.precision, premier, generaux) });
-  }, [f.type, f.precision, f.chevaux[0], f.intervalleAuto, JSON.stringify(generaux)]);
+    maj({ intervalle: intervallePropose(f.type, f.precision, premier, reglages) });
+  }, [f.type, f.precision, f.chevaux[0], f.intervalleAuto, JSON.stringify(reglages)]);
 
   const suggestions = (champ: 'praticien' | 'precision') =>
     [...new Set(soins.filter((s) => s.type === f.type && s[champ]).map((s) => s[champ]))].sort((a, b) => a.localeCompare(b, 'fr'));
@@ -123,7 +123,8 @@ function Formulaire(props: {
         praticien: f.praticien.trim(),
         motif: f.motif.trim(),
         cout,
-        intervalle: avecIntervalle ? f.intervalle : null,
+        // en saisie groupée, chaque cheval garde l'intervalle de sa catégorie tant qu'on n'a rien changé à la main
+        intervalle: !avecIntervalle ? null : f.intervalleAuto && f.chevaux.length > 1 ? intervallePropose(f.type, f.precision, parId.get(chevalId), reglages) : f.intervalle,
         prochaineManuelle: f.type === 'veterinaire' && f.prochaineManuelle ? f.prochaineManuelle : null,
         lienFacture: f.lienFacture.trim(),
         details: { ...(existant?.details ?? {}), ...details },
@@ -285,7 +286,13 @@ function Formulaire(props: {
                 </select>
               </div>
             </div>
-            {f.intervalleAuto && f.intervalle && <p class="discret petit">Valeur proposée d'après les réglages{premier?.intervalles ? ' de ce cheval' : ''}.</p>}
+            {f.intervalleAuto && f.intervalle && (
+              <p class="discret petit">
+                {f.chevaux.length > 1
+                  ? "Chaque cheval reçoit l'intervalle de sa catégorie (retraite, compétition…) ou le sien."
+                  : `Valeur proposée d'après les réglages${premier?.intervalles && Object.keys(premier.intervalles).length ? ' de ce cheval' : premier?.usage ? ` (${premier.usage})` : ''}.`}
+              </p>
+            )}
           </>
         )}
         {prochaine && f.type !== 'ordonnance' && (

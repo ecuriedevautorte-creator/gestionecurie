@@ -3,6 +3,9 @@ import { aujourdhui } from '../dates';
 import { db, enregistrerImport, useLive } from '../db';
 import { importerClasseur, type ResultatImport } from '../import/excel';
 import type { Anomalie } from '../model';
+import { synchroConfiguree } from '../config';
+import { synchroniserMaintenant } from '../compte';
+import { demanderRemplacementServeur } from '../synchro';
 
 const GROUPES: [Anomalie['gravite'], string, string][] = [
   ['a-trancher', 'À trancher', "Données importées telles quelles, avec un bandeau « À vérifier » sur la fiche. Rien n'a été modifié."],
@@ -30,8 +33,15 @@ export function PageImport({ utilisateur }: { utilisateur: string }) {
 
   const valider = async () => {
     if (!resultat) return;
-    if (dejaLa && dejaLa.chevaux > 0 && !confirm('Remplacer toutes les données actuelles par celles de ce fichier ?')) return;
+    const message = synchroConfiguree
+      ? 'Remplacer toutes les données actuelles par celles de ce fichier, sur cet appareil ET sur ceux de l’autre gérant ?'
+      : 'Remplacer toutes les données actuelles par celles de ce fichier ?';
+    if (dejaLa && dejaLa.chevaux > 0 && !confirm(message)) return;
     await enregistrerImport(resultat);
+    if (synchroConfiguree) {
+      await demanderRemplacementServeur();
+      void synchroniserMaintenant();
+    }
     setEtat('fait');
   };
 
