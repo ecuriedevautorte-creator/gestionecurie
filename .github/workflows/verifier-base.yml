@@ -1,0 +1,21 @@
+name: Vérifier la base partagée
+
+# Lancement manuel : contrôle que la base Supabase répond, que le script d'installation
+# a bien été exécuté et que rien n'est accessible sans compte.
+on: workflow_dispatch
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Interroger la base
+        run: |
+          U=$(grep -oP "SUPABASE_URL = '\K[^']+" src/config.ts)
+          K=$(grep -oP "SUPABASE_CLE_PUBLIQUE = '\K[^']+" src/config.ts)
+          echo "--- réglages de connexion"; curl -sS "$U/auth/v1/settings" -H "apikey: $K"; echo
+          echo "--- table etat sans compte (refus attendu)"; curl -sS "$U/rest/v1/etat?select=cle" -H "apikey: $K"; echo
+          echo "--- table fiches sans compte (refus attendu)"; curl -sS "$U/rest/v1/fiches?select=id&limit=1" -H "apikey: $K"; echo
+          echo "--- table inexistante (pour comparaison)"; curl -sS "$U/rest/v1/nexistepas?select=x" -H "apikey: $K"; echo
+          echo "--- fonction appliquer_journal sans compte (refus attendu)"; curl -sS -X POST "$U/rest/v1/rpc/appliquer_journal" -H "apikey: $K" -H "Content-Type: application/json" -d '{"entrees":[]}'; echo
+          echo "--- inscription d'un inconnu (refus attendu)"; curl -sS -X POST "$U/auth/v1/signup" -H "apikey: $K" -H "Content-Type: application/json" -d '{"email":"test-intrus@example.com","password":"MotDePasse-Test-123"}'; echo
