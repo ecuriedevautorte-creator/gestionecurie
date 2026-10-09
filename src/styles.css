@@ -876,3 +876,16 @@ h3 {
   gap: 8px;
   margin-top: 10px;
 }
+
+.compte-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.compte-ligne .compte {
+  margin: 0;
+}

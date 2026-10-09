@@ -115,7 +115,9 @@ function totaux(d: Donnees) {
 const nomFichier = (c: Cheval, ext: string) => `${c.nom} - fiche du ${formater(aujourdhui()).replace(/\//g, '-')}.${ext}`;
 
 /** Propose le fichier : partage (téléphone) ou téléchargement (ordinateur). */
-async function proposer(blob: Blob, nom: string): Promise<void> {
+export async function proposer(blob: Blob, nomLisible: string): Promise<void> {
+  // sans accents : certains appareils remplacent sinon le nom par « download »
+  const nom = nomLisible.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘]/g, "'").replace(/[^\w .'()-]/g, '_');
   const fichier = new File([blob], nom, { type: blob.type });
   const tactile = matchMedia('(pointer: coarse)').matches;
   if (tactile && navigator.canShare?.({ files: [fichier] })) {
@@ -206,7 +208,7 @@ export async function exporterExcel(id: string): Promise<void> {
   await proposer(new Blob([tampon], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nomFichier(d.cheval, 'xlsx'));
 }
 
-async function imageEnDataUrl(chemin: string): Promise<string | null> {
+export async function imageEnDataUrl(chemin: string): Promise<string | null> {
   try {
     const blob = await (await fetch(chemin)).blob();
     return await new Promise((ok) => {
