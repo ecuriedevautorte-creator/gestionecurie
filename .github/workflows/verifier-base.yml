@@ -13,9 +13,10 @@ jobs:
         run: |
           U=$(grep -oP "SUPABASE_URL = '\K[^']+" src/config.ts)
           K=$(grep -oP "SUPABASE_CLE_PUBLIQUE = '\K[^']+" src/config.ts)
-          echo "--- réglages de connexion"; curl -sS "$U/auth/v1/settings" -H "apikey: $K"; echo
-          echo "--- table etat sans compte (refus attendu)"; curl -sS "$U/rest/v1/etat?select=cle" -H "apikey: $K"; echo
-          echo "--- table fiches sans compte (refus attendu)"; curl -sS "$U/rest/v1/fiches?select=id&limit=1" -H "apikey: $K"; echo
-          echo "--- table inexistante (pour comparaison)"; curl -sS "$U/rest/v1/nexistepas?select=x" -H "apikey: $K"; echo
-          echo "--- fonction appliquer_journal sans compte (refus attendu)"; curl -sS -X POST "$U/rest/v1/rpc/appliquer_journal" -H "apikey: $K" -H "Content-Type: application/json" -d '{"entrees":[]}'; echo
-          echo "--- inscription d'un inconnu (refus attendu)"; curl -sS -X POST "$U/auth/v1/signup" -H "apikey: $K" -H "Content-Type: application/json" -d '{"email":"test-intrus@example.com","password":"MotDePasse-Test-123"}'; echo
+          note() { r=$(curl -sS "${@:2}" | tr -d '\n' | cut -c1-400); echo "::notice title=$1::$r"; }
+          note "reglages" "$U/auth/v1/settings" -H "apikey: $K"
+          note "etat sans compte" "$U/rest/v1/etat?select=cle" -H "apikey: $K"
+          note "fiches sans compte" "$U/rest/v1/fiches?select=id&limit=1" -H "apikey: $K"
+          note "table inexistante" "$U/rest/v1/nexistepas?select=x" -H "apikey: $K"
+          note "rpc sans compte" -X POST "$U/rest/v1/rpc/appliquer_journal" -H "apikey: $K" -H "Content-Type: application/json" -d '{"entrees":[]}'
+          note "inscription inconnu" -X POST "$U/auth/v1/signup" -H "apikey: $K" -H "Content-Type: application/json" -d '{"email":"test-intrus@example.com","password":"MotDePasse-Test-123"}'
