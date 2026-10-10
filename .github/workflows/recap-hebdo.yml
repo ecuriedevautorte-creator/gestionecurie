@@ -1,0 +1,32 @@
+name: Récapitulatif hebdomadaire des alertes
+
+# Chaque lundi vers 7 h (heure de Paris), et à la demande (bouton « Run workflow »).
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      essai:
+        description: "Essai : afficher le récap sans envoyer l'e-mail"
+        type: boolean
+        default: false
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Préparer et envoyer le récapitulatif
+        run: npx vite-node scripts/recap-hebdo.ts
+        env:
+          RECAP_COMPTE_EMAIL: ${{ secrets.RECAP_COMPTE_EMAIL }}
+          RECAP_COMPTE_MOT_DE_PASSE: ${{ secrets.RECAP_COMPTE_MOT_DE_PASSE }}
+          RECAP_GMAIL: ${{ secrets.RECAP_GMAIL }}
+          RECAP_GMAIL_MOT_DE_PASSE_APPLI: ${{ secrets.RECAP_GMAIL_MOT_DE_PASSE_APPLI }}
+          RECAP_DESTINATAIRES: ${{ secrets.RECAP_DESTINATAIRES }}
+          RECAP_ESSAI: ${{ inputs.essai && '1' || '' }}
